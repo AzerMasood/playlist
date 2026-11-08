@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#050805">
+<title>Our Playlist</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&display=swap">
+<style>
+:root{--bg:#050805;--card:#031a06;--ink:#19ff3c;--muted:#14b32c;--line:#0b4a14;--accent:#19ff3c;--on-accent:#021a05;--stage:#000;
+--yt:#e5322d;--ig:#b02fc4;--fb:#2a6df4;box-sizing:border-box;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4;
+padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+main{max-width:640px;margin:0 auto;padding:8px 16px 16px}
+h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:4px 0 14px;color:var(--ink);text-shadow:0 0 10px rgba(25,255,60,.45)}
+.stage{position:relative;box-shadow:0 0 22px rgba(25,255,60,.12);width:min(100%,560px);height:calc(100vh - 96px);height:calc(100dvh - 96px);margin:0 auto;background:var(--stage);border-radius:22px;border:3px solid var(--line);overflow:hidden;transition:border-color .2s}
+.stage[data-p=yt]{border-color:var(--yt)}.stage[data-p=ig]{border-color:var(--ig)}.stage[data-p=fb]{border-color:var(--fb)}
+.pane{position:absolute;inset:0;display:none;background:#000}
+.pane.on{display:block}
+.pane iframe,.pane>div,.pane .fb-video,.pane span{width:100%!important;height:100%!important}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;color:var(--muted);font-size:1rem}
+#bar{display:flex;gap:6px;justify-content:center;width:min(100%,560px);margin:10px auto 0}
+#bar button{flex:1;padding:11px 4px;font-size:.9rem}
+#bar button.main{font-weight:700}
+.now{text-align:center;margin:12px 0 0;min-height:1.4em;color:var(--muted);font-size:.9rem}
+.ctl{display:flex;gap:8px;justify-content:center;margin:10px 0}
+button{font:inherit;border:0;border-radius:12px;padding:12px 16px;cursor:pointer;background:var(--card);color:var(--muted);border:1px solid var(--line)}
+button:hover{color:var(--ink);border-color:var(--muted)}
+button.main{background:var(--card);color:var(--ink);border-color:var(--ink);font-weight:800;padding:12px 24px;text-shadow:0 0 8px rgba(25,255,60,.55)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.add{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.add input[type=text]{flex:1 1 200px;font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+#msg{min-height:1.4em;margin:4px 2px 10px;font-size:.9rem;color:var(--muted)}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+li.cur{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.badge{flex:none;width:34px;height:34px;border-radius:10px;color:#fff;font-weight:800;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+.badge.yt{background:var(--yt)}.badge.ig{background:var(--ig)}.badge.fb{background:var(--fb)}
+.lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;font-size:.92rem}
+.len{width:64px;font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+li button{padding:8px 11px}
+.foot{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.small{color:var(--muted);font-size:.82rem}
+</style>
+</head>
+<body>
+<main>
+
+<div class="stage" id="stage" data-p="">
+<div class="empty" id="empty">Copy a link from Instagram, YouTube or Facebook, then tap “Add from clipboard”.</div>
+<div class="pane" id="ytPane"><div id="ytBox"></div></div>
+<div class="pane" id="igPane"></div>
+<div class="pane" id="fbPane"></div>
+</div>
+<div id="bar">
+<button id="prev" type="button">Back</button>
+<button id="play" type="button" class="main">Play</button>
+<button id="next" type="button">Next</button>
+<button id="clip" type="button">+ Clipboard</button>
+<button id="toList" type="button">List</button>
+</div>
+<div class="now" id="now" aria-live="polite"></div>
+<h1>Our playlist</h1>
+<div class="add" id="addSec">
+<input id="paste" type="text" inputmode="url" placeholder="Or paste a link here" aria-label="Paste a video link">
+<button id="addBtn" type="button">Add</button>
+</div>
+<div id="msg" aria-live="polite"></div>
+
+<ul id="list"></ul>
+
+<div class="foot">
+<button id="share" type="button">Copy share link</button>
+<button id="clear" type="button">Clear list</button>
+</div>
+<p class="small">Only links are saved, on this device. YouTube and Facebook move on by themselves. Instagram can’t say when a reel ends, so type its length in seconds next to it, or tap Next. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let list=[],idx=-1,timer=null,tick=null;
+try{list=JSON.parse(localStorage.getItem('playlist.v1')||'[]')}catch(e){list=[]}
+const save=()=>{try{localStorage.setItem('playlist.v1',JSON.stringify(list))}catch(e){}};
+const say=t=>{$('msg').textContent=t};
+
+function parse(text){
+  const m0=(text||'').match(/https?:\/\/\S+/);
+  if(!m0)return null;
+  const u=m0[0].replace(/[)\].,]+$/,'');let m;
+  if(m=u.match(/(?:youtube\.com\/(?:shorts\/|watch\?(?:[^ ]*&)?v=|embed\/|live\/)|youtu\.be\/)([\w-]{11})/i))return{p:'yt',id:m[1],url:u};
+  if(m=u.match(/instagram\.com\/(?:[\w.]+\/)?(reels?|p|tv)\/([\w-]+)/i))return{p:'ig',id:m[2],kind:m[1]==='reels'?'reel':m[1],url:u};
+  if(/(facebook\.com|fb\.watch|fb\.com)/i.test(u))return{p:'fb',id:u,url:u};
+  return null;
+}
+function add(text){
+  const v=parse(text);
+  if(!v){say('That doesn’t look like an Instagram, YouTube or Facebook video link.');return false}
+  if(list.some(x=>x.p===v.p&&x.id===v.id)){say('That video is already in the list.');return false}
+  list.push(v);save();render();say('Added. '+list.length+' in the playlist.');return true;
+}
+$('clip').onclick=async()=>{
+  try{const t=await navigator.clipboard.readText();if(!add(t)&&!parse(t))say('Nothing usable on the clipboard. Paste the link in the box instead.')}
+  catch(e){say('Your browser blocked clipboard access. Paste the link in the box instead.');$('paste').focus()}
+};
+$('addBtn').onclick=()=>{if(add($('paste').value))$('paste').value=''};
+$('paste').addEventListener('keydown',e=>{if(e.key==='Enter')$('addBtn').click()});
+$('paste').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');setTimeout(()=>{if(add(t))$('paste').value=''},0)});
+
+const NAMES={yt:'YouTube',ig:'Instagram',fb:'Facebook'},TAGS={yt:'YT',ig:'IG',fb:'FB'};
+function render(){
+  $('toList').textContent=list.length?'List ('+list.length+')':'List';
+  const ul=$('list');ul.textContent='';
+  list.forEach((v,i)=>{
+    const li=document.createElement('li');if(i===idx)li.className='cur';
+    const b=document.createElement('div');b.className='badge '+v.p;b.textContent=TAGS[v.p];
+    const l=document.createElement('div');l.className='lbl';l.textContent=(i+1)+'. '+NAMES[v.p]+' · '+v.url.replace(/^https?:\/\/(www\.)?/,'');
+    l.onclick=()=>playAt(i);
+    li.append(b,l);
+    if(v.p==='ig'){
+      const n=document.createElement('input');n.className='len';n.type='number';n.min='1';n.inputMode='numeric';n.placeholder='sec';n.title='Reel length in seconds';n.setAttribute('aria-label','Reel length in seconds');
+      n.value=v.len||'';n.oninput=()=>{v.len=parseInt(n.value)||0;save()};
+      li.append(n);
+    }
+    const x=document.createElement('button');x.type='button';x.textContent='✕';x.setAttribute('aria-label','Remove');
+    x.onclick=()=>{list.splice(i,1);if(i<idx)idx--;else if(i===idx){stopAll();idx=-1}save();render()};
+    li.append(x);ul.append(li);
+  });
+}
+
+/* players */
+let ytPlayer=null,ytReady=false,ytPending=null,fbReady=false,fbPending=null;
+function loadScript(src){const s=document.createElement('script');s.src=src;s.async=true;document.head.appendChild(s)}
+window.onYouTubeIframeAPIReady=()=>{ytReady=true;if(ytPending){const id=ytPending;ytPending=null;ytGo(id)}};
+loadScript('https://www.youtube.com/iframe_api');
+window.fbAsyncInit=()=>{
+  FB.init({xfbml:false,version:'v19.0'});fbReady=true;
+  FB.Event.subscribe('xfbml.ready',msg=>{
+    if(msg.type!=='video')return;
+    msg.instance.subscribe('finishedPlaying',()=>{if(list[idx]&&list[idx].p==='fb')next()});
+    try{msg.instance.play()}catch(e){}
+  });
+  if(fbPending){const u=fbPending;fbPending=null;fbGo(u)}
+};
+loadScript('https://connect.facebook.net/en_US/sdk.js');
+
+function ytGo(id){
+  if(!ytReady){ytPending=id;return}
+  if(ytPlayer&&ytPlayer.loadVideoById){ytPlayer.loadVideoById(id);return}
+  ytPlayer=new YT.Player('ytBox',{width:'100%',height:'100%',videoId:id,playerVars:{playsinline:1,rel:0,autoplay:1},events:{
+    onReady:e=>e.target.playVideo(),
+    onStateChange:e=>{if(e.data===0&&list[idx]&&list[idx].p==='yt')next()},
+    onError:()=>{if(list[idx]&&list[idx].p==='yt'){say('Skipped a YouTube video that can’t be played here.');setTimeout(next,800)}}
+  }});
+}
+function fbGo(url){
+  if(!fbReady){fbPending=url;return}
+  const box=$('fbPane');box.textContent='';
+  const d=document.createElement('div');d.className='fb-video';
+  d.setAttribute('data-href',url);d.setAttribute('data-autoplay','true');d.setAttribute('data-show-text','false');d.setAttribute('data-allowfullscreen','true');
+  box.appendChild(d);FB.XFBML.parse(box);
+}
+function igGo(v){
+  const f=document.createElement('iframe');
+  f.src='https://www.instagram.com/'+v.kind+'/'+v.id+'/embed';
+  f.setAttribute('allow','autoplay; encrypted-media; fullscreen');f.setAttribute('allowfullscreen','');f.setAttribute('frameborder','0');f.setAttribute('scrolling','no');
+  $('igPane').textContent='';$('igPane').appendChild(f);
+  if(v.len>0){
+    let left=v.len;
+    $('now').textContent='Instagram: tap play. Next video in '+left+'s';
+    tick=setInterval(()=>{left--;if(left>0)$('now').textContent='Instagram: next video in '+left+'s'},1000);
+    timer=setTimeout(next,v.len*1000);
+  }else{$('now').textContent='Instagram: tap play, then tap Next when it ends (or add its length in the list).'}
+}
+function stopAll(){
+  clearTimeout(timer);clearInterval(tick);timer=tick=null;
+  try{if(ytPlayer&&ytPlayer.stopVideo)ytPlayer.stopVideo()}catch(e){}
+  $('igPane').textContent='';$('fbPane').textContent='';
+  ['yt','ig','fb'].forEach(p=>$(p+'Pane').classList.remove('on'));
+  $('stage').dataset.p='';$('empty').style.display='flex';$('now').textContent='';
+}
+function playAt(i){
+  if(i<0||i>=list.length){stopAll();idx=-1;render();if(list.length)say('End of the playlist. Press Play to start again.');return}
+  stopAll();idx=i;const v=list[i];
+  $('empty').style.display='none';$('stage').dataset.p=v.p;$(v.p+'Pane').classList.add('on');
+  $('now').textContent=(i+1)+' of '+list.length+' · '+NAMES[v.p];
+  if(v.p==='yt')ytGo(v.id);else if(v.p==='fb')fbGo(v.url);else igGo(v);
+  render();say('');
+}
+function next(){playAt(idx+1)}
+$('toList').onclick=()=>$('addSec').scrollIntoView({behavior:'smooth'});
+$('next').onclick=()=>{if(!list.length)return say('Add a video first.');next()};
+$('prev').onclick=()=>{if(!list.length)return say('Add a video first.');playAt(Math.max(0,idx-1))};
+$('play').onclick=()=>{if(!list.length)return say('Add a video first.');playAt(idx<0?0:idx)};
+
+/* sharing */
+$('share').onclick=async()=>{
+  if(!list.length)return say('Add a video first.');
+  const data=btoa(unescape(encodeURIComponent(JSON.stringify(list.map(v=>[v.url,v.len||0])))));
+  const link=location.origin+location.pathname+'#l='+data;
+  try{await navigator.clipboard.writeText(link);say('Share link copied. Anyone who opens it can add your videos to their list.')}
+  catch(e){$('paste').value=link;say('Copy the link from the box.')}
+};
+$('clear').onclick=()=>{if(list.length&&confirm('Remove every video from the list?')){stopAll();list=[];idx=-1;save();render();say('List cleared.')}};
+function importHash(){
+  if(!location.hash.startsWith('#l='))return;
+  try{
+    const arr=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))));
+    let n=0;arr.forEach(([u,len])=>{const v=parse(u);if(v&&!list.some(x=>x.p===v.p&&x.id===v.id)){if(len)v.len=len;list.push(v);n++}});
+    save();say(n+' video'+(n===1?'':'s')+' added from the share link.');
+  }catch(e){say('That share link couldn’t be read.')}
+  history.replaceState(null,'',location.pathname);
+}
+function importShare(){
+  const q=new URLSearchParams(location.search);
+  const t=['url','text','add','title'].map(k=>q.get(k)).filter(Boolean).join(' ');
+  if(!t)return;
+  add(t);history.replaceState(null,'',location.pathname);
+}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+importHash();importShare();render();
+</script>
+</body>
+</html>
