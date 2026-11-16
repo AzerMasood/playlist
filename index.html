@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#050805">
@@ -18,7 +18,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple
 padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 main{max-width:640px;margin:0 auto;padding:8px 16px 16px}
 h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:4px 0 14px;color:var(--ink);text-shadow:0 0 10px rgba(25,255,60,.45)}
-.stage{position:relative;box-shadow:0 0 22px rgba(25,255,60,.12);width:min(100%,560px);height:calc(100vh - 96px);height:calc(100dvh - 96px);margin:0 auto;background:var(--stage);border-radius:22px;border:3px solid var(--line);overflow:hidden;transition:border-color .2s}
+.stage{position:relative;box-shadow:0 0 22px rgba(25,255,60,.12);width:min(100%,560px);height:calc(100vh - 96px);height:calc(var(--vh,100dvh) - 96px);margin:0 auto;background:var(--stage);border-radius:22px;border:3px solid var(--line);overflow:hidden;transition:border-color .2s}
 .stage[data-p=yt]{border-color:var(--yt)}.stage[data-p=ig]{border-color:var(--ig)}.stage[data-p=fb]{border-color:var(--fb)}
 .pane{position:absolute;inset:0;display:none;background:#000}
 .pane.on{display:block}
@@ -56,6 +56,11 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 #chat{position:absolute;left:0;right:0;bottom:0;height:60%;z-index:6;display:flex;flex-direction:column;pointer-events:none}
 #chat[hidden]{display:none}
 #chat.named .chead{display:none}
+#chat.typing{height:100%}
+#chat.typing .chead{order:-2}
+#chat.typing .cform{order:-1}
+#chat.typing #cmsgs{flex:0 0 auto;max-height:36%}
+#chat.typing #gp{bottom:auto;top:64px;max-height:min(240px,45%)}
 .chead,.cform{display:flex;gap:8px;padding:8px;pointer-events:auto}
 .chead input,.cform input{flex:1;min-width:0;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.6);color:var(--ink)}
 .chead button,.cform button{background:rgba(0,0,0,.6)}
@@ -374,6 +379,16 @@ function sendGif(url){
   $('chat').classList.add('named');
   cref.push({n:name,g:url,c:cid,ts:firebase.database.ServerValue.TIMESTAMP}).catch(e=>say('Could not send ('+(e.code||'error')+').'));
 }
+function setVH(){const a=document.activeElement;if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'))return;document.documentElement.style.setProperty('--vh',window.innerHeight+'px')}
+setVH();window.addEventListener('resize',setVH);window.addEventListener('orientationchange',()=>setTimeout(setVH,300));
+const typingIds=['ctext','gq','cname'];
+typingIds.forEach(id=>{
+  $(id).addEventListener('focus',()=>{$('chat').classList.add('typing');window.scrollTo(0,0)});
+  $(id).addEventListener('blur',()=>setTimeout(()=>{
+    if(!typingIds.some(i=>document.activeElement===$(i))){$('chat').classList.remove('typing');setTimeout(setVH,300)}
+  },200));
+});
+['csend','gifBtn'].forEach(id=>$(id).addEventListener('mousedown',e=>e.preventDefault()));
 $('csend').onclick=sendChat;
 $('ctext').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
 $('chatBtn').onclick=()=>{
