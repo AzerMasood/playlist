@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#050805">
@@ -14,6 +14,7 @@
 :root{--bg:#050805;--card:#031a06;--ink:#19ff3c;--muted:#14b32c;--line:#0b4a14;--accent:#19ff3c;--on-accent:#021a05;--stage:#000;
 --yt:#e5322d;--ig:#b02fc4;--fb:#2a6df4;box-sizing:border-box;color-scheme:dark}
 *{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden;touch-action:pan-x pan-y}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4;
 padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 main{max-width:640px;margin:0 auto;padding:8px 16px 16px}
@@ -65,7 +66,10 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 .chead input,.cform input{flex:1;min-width:0;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.6);color:var(--ink)}
 .chead button,.cform button{background:rgba(0,0,0,.6)}
 .chead button{padding:8px 12px}
-#cmsgs{flex:1;overflow:hidden;padding:4px 10px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;font-size:.92rem}
+#cmsgs{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none;pointer-events:none;padding:4px 10px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+#cmsgs::-webkit-scrollbar{display:none}
+#cmsgs>:first-child{margin-top:auto}
+#cmsgs .m{pointer-events:auto;flex:none}
 #cnote{min-height:1.2em;padding:0 12px;font-size:.8rem;color:var(--ink);text-shadow:0 0 6px #000}
 .m{max-width:85%;padding:6px 10px;border-radius:14px;background:rgba(0,0,0,.62);border:1px solid rgba(25,255,60,.25);align-self:flex-start;overflow-wrap:anywhere}
 .m.me{align-self:flex-end;border-color:rgba(25,255,60,.5)}
@@ -300,10 +304,17 @@ const chatOpen=()=>!$('chat').hidden;
 function seenKey(){try{return localStorage.getItem('chatSeen:'+gid)||''}catch(e){return ''}}
 function updateChatBtn(){const s=seenKey();const n=chatOpen()?0:cmsgs.filter(m=>m.key>s&&m.c!==cid&&!parse(m.t||'')).length;$('chatBtn').textContent=n?'Chat ('+n+')':'Chat'}
 function markSeen(){const last=cmsgs.length?cmsgs[cmsgs.length-1].key:'';if(last){try{localStorage.setItem('chatSeen:'+gid,last)}catch(e){}}updateChatBtn()}
+const GIF_LIFE=5000;let srvOff=0,gifT=null;
+function srvNow(){return Date.now()+srvOff}
 function renderChat(){
-  const box=$('cmsgs');const atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+  const box=$('cmsgs');const prev=box.scrollTop;const atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<60;
   box.textContent='';
-  cmsgs.filter(m=>!parse(m.t||'')).slice(-30).forEach(m=>{
+  let nextExpiry=Infinity;
+  cmsgs.filter(m=>!parse(m.t||'')).forEach(m=>{
+    if(m.g){const exp=(m.ts||srvNow())+GIF_LIFE;if(exp<=srvNow())return;nextExpiry=Math.min(nextExpiry,exp)}
+    m._show=true;
+  });
+  cmsgs.filter(m=>m._show).slice(-100).forEach(m=>{
     const d=document.createElement('div');d.className='m'+(m.c===cid?' me':'');
     const b=document.createElement('b');const t=m.ts?new Date(m.ts):null;
     b.textContent=(m.n||'Someone')+(t?' · '+t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'');
@@ -313,9 +324,14 @@ function renderChat(){
     if(m.g&&okGif(m.g)){const im=document.createElement('img');im.src=m.g;im.alt='GIF';im.className='gifmsg';im.loading='lazy';d.append(im)}
     box.append(d);
   });
-  if(atEnd||chatOpen())box.scrollTop=box.scrollHeight;
+  cmsgs.forEach(m=>{delete m._show});
+  if(atEnd)box.scrollTop=box.scrollHeight;
+  else box.scrollTop=prev;
+  clearTimeout(gifT);
+  if(nextExpiry<Infinity)gifT=setTimeout(renderChat,Math.max(50,nextExpiry-srvNow()+50));
 }
 function startChat(id){
+  db.ref('.info/serverTimeOffset').on('value',s=>{srvOff=s.val()||0});
   cref=db.ref('groups/'+id+'/chat');
   cref.limitToLast(100).on('value',snap=>{
     const arr=[];snap.forEach(ch=>{arr.push(Object.assign({key:ch.key},ch.val()))});
@@ -379,7 +395,7 @@ function sendGif(url){
   $('chat').classList.add('named');
   cref.push({n:name,g:url,c:cid,ts:firebase.database.ServerValue.TIMESTAMP}).catch(e=>say('Could not send ('+(e.code||'error')+').'));
 }
-function setVH(){const a=document.activeElement;if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'))return;document.documentElement.style.setProperty('--vh',window.innerHeight+'px')}
+function setVH(){const a=document.activeElement;if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'))return;document.documentElement.style.setProperty('--vh',(document.documentElement.clientHeight||window.innerHeight)+'px')}
 setVH();window.addEventListener('resize',setVH);window.addEventListener('orientationchange',()=>setTimeout(setVH,300));
 const typingIds=['ctext','gq','cname'];
 typingIds.forEach(id=>{
@@ -393,7 +409,7 @@ $('csend').onclick=sendChat;
 $('ctext').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
 $('chatBtn').onclick=()=>{
   const c=$('chat');c.hidden=!c.hidden;$('gp').hidden=true;
-  if(!c.hidden){c.classList.toggle('named',!!$('cname').value.trim());renderChat();markSeen();if(!$('cname').value.trim())$('cname').focus()}else updateChatBtn();
+  if(!c.hidden){c.classList.toggle('named',!!$('cname').value.trim());renderChat();$('cmsgs').scrollTop=$('cmsgs').scrollHeight;markSeen();if(!$('cname').value.trim())$('cname').focus()}else updateChatBtn();
 };
 $('rename').onclick=()=>{try{localStorage.removeItem('chatName')}catch(e){}$('cname').value='';$('chat').classList.remove('named');$('chat').hidden=false;$('stage').scrollIntoView({behavior:'smooth'});$('cname').focus();updateChatBtn()};
 $('cclose').onclick=()=>{$('chat').hidden=true;$('gp').hidden=true;updateChatBtn()};
