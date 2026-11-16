@@ -46,6 +46,10 @@ li.cur{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 li button{padding:8px 11px}
 .foot{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
 .small{color:var(--muted);font-size:.82rem}
+#join{display:none;margin:24px auto;max-width:420px}
+body.nogroup #join{display:block}
+body.nogroup main>*:not(#join):not(h1){display:none}
+#grp{margin:0 0 8px}
 </style>
 </head>
 <body>
@@ -66,6 +70,13 @@ li button{padding:8px 11px}
 </div>
 <div class="now" id="now" aria-live="polite"></div>
 <h1>Our playlist</h1>
+<div id="join">
+<p><b>Join your group</b></p>
+<p class="small">Type your group passcode (8 or more characters). Everyone who uses the same passcode shares one playlist.</p>
+<div class="add"><input id="code" type="text" autocomplete="off" autocapitalize="none" placeholder="Group passcode" aria-label="Group passcode"><button id="joinBtn" type="button" class="main">Join</button></div>
+<div id="joinMsg" class="small"></div>
+</div>
+<div id="grp" class="small"></div>
 <div class="add" id="addSec">
 <input id="paste" type="text" inputmode="url" placeholder="Or paste a link here" aria-label="Paste a video link">
 <button id="addBtn" type="button">Add</button>
@@ -75,17 +86,18 @@ li button{padding:8px 11px}
 <ul id="list"></ul>
 
 <div class="foot">
-<button id="share" type="button">Copy share link</button>
+<button id="leave" type="button">Leave group</button>
 <button id="clear" type="button">Clear list</button>
 </div>
-<p class="small">Only links are saved, on this device. YouTube and Facebook move on by themselves. Instagram can’t say when a reel ends, so type its length in seconds next to it, or tap Next. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
+<p class="small">Only links are saved, shared with everyone in your group. YouTube and Facebook move on by themselves. Instagram can’t say when a reel ends, so type its length in seconds next to it, or tap Next. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
 </main>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-let list=[],idx=-1,timer=null,tick=null;
-try{list=JSON.parse(localStorage.getItem('playlist.v1')||'[]')}catch(e){list=[]}
-const save=()=>{try{localStorage.setItem('playlist.v1',JSON.stringify(list))}catch(e){}};
+let list=[],idx=-1,curKey=null,timer=null,tick=null,localOld=[];
+try{localOld=JSON.parse(localStorage.getItem('playlist.v1')||'[]')}catch(e){}
 const say=t=>{$('msg').textContent=t};
 
 function parse(text){
@@ -100,8 +112,11 @@ function parse(text){
 function add(text){
   const v=parse(text);
   if(!v){say('That doesn’t look like an Instagram, YouTube or Facebook video link.');return false}
+  if(!ref){pending=text;return false}
   if(list.some(x=>x.p===v.p&&x.id===v.id)){say('That video is already in the list.');return false}
-  list.push(v);save();render();say('Added. '+list.length+' in the playlist.');return true;
+  const o={p:v.p,id:v.id,url:v.url};if(v.kind)o.kind=v.kind;
+  ref.push(o).then(()=>say('Added to the group playlist.')).catch(e=>say('Could not add it ('+(e.code||'error')+').'));
+  return true;
 }
 $('clip').onclick=async()=>{
   try{const t=await navigator.clipboard.readText();if(!add(t)&&!parse(t))say('Nothing usable on the clipboard. Paste the link in the box instead.')}
@@ -123,11 +138,11 @@ function render(){
     li.append(b,l);
     if(v.p==='ig'){
       const n=document.createElement('input');n.className='len';n.type='number';n.min='1';n.inputMode='numeric';n.placeholder='sec';n.title='Reel length in seconds';n.setAttribute('aria-label','Reel length in seconds');
-      n.value=v.len||'';n.oninput=()=>{v.len=parseInt(n.value)||0;save()};
+      n.value=v.len||'';n.oninput=()=>{v.len=parseInt(n.value)||0;ref.child(v.key).update({len:v.len})};
       li.append(n);
     }
     const x=document.createElement('button');x.type='button';x.textContent='✕';x.setAttribute('aria-label','Remove');
-    x.onclick=()=>{list.splice(i,1);if(i<idx)idx--;else if(i===idx){stopAll();idx=-1}save();render()};
+    x.onclick=()=>{if(i===idx){stopAll();idx=-1;curKey=null}ref.child(v.key).remove()};
     li.append(x);ul.append(li);
   });
 }
@@ -185,7 +200,7 @@ function stopAll(){
 }
 function playAt(i){
   if(i<0||i>=list.length){stopAll();idx=-1;render();if(list.length)say('End of the playlist. Press Play to start again.');return}
-  stopAll();idx=i;const v=list[i];
+  stopAll();idx=i;const v=list[i];curKey=v.key;
   $('empty').style.display='none';$('stage').dataset.p=v.p;$(v.p+'Pane').classList.add('on');
   $('now').textContent=(i+1)+' of '+list.length+' · '+NAMES[v.p];
   if(v.p==='yt')ytGo(v.id);else if(v.p==='fb')fbGo(v.url);else igGo(v);
@@ -197,32 +212,56 @@ $('next').onclick=()=>{if(!list.length)return say('Add a video first.');next()};
 $('prev').onclick=()=>{if(!list.length)return say('Add a video first.');playAt(Math.max(0,idx-1))};
 $('play').onclick=()=>{if(!list.length)return say('Add a video first.');playAt(idx<0?0:idx)};
 
-/* sharing */
-$('share').onclick=async()=>{
-  if(!list.length)return say('Add a video first.');
-  const data=btoa(unescape(encodeURIComponent(JSON.stringify(list.map(v=>[v.url,v.len||0])))));
-  const link=location.origin+location.pathname+'#l='+data;
-  try{await navigator.clipboard.writeText(link);say('Share link copied. Anyone who opens it can add your videos to their list.')}
-  catch(e){$('paste').value=link;say('Copy the link from the box.')}
-};
-$('clear').onclick=()=>{if(list.length&&confirm('Remove every video from the list?')){stopAll();list=[];idx=-1;save();render();say('List cleared.')}};
-function importHash(){
-  if(!location.hash.startsWith('#l='))return;
-  try{
-    const arr=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))));
-    let n=0;arr.forEach(([u,len])=>{const v=parse(u);if(v&&!list.some(x=>x.p===v.p&&x.id===v.id)){if(len)v.len=len;list.push(v);n++}});
-    save();say(n+' video'+(n===1?'':'s')+' added from the share link.');
-  }catch(e){say('That share link couldn’t be read.')}
-  history.replaceState(null,'',location.pathname);
-}
+$('clear').onclick=()=>{if(list.length&&confirm('Remove every video from the playlist for EVERYONE in the group?')){stopAll();idx=-1;curKey=null;ref.remove();say('Playlist cleared.')}};
 function importShare(){
   const q=new URLSearchParams(location.search);
   const t=['url','text','add','title'].map(k=>q.get(k)).filter(Boolean).join(' ');
   if(!t)return;
-  add(t);history.replaceState(null,'',location.pathname);
+  pending=t;history.replaceState(null,'',location.pathname);
 }
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
-importHash();importShare();render();
+const FB={apiKey:"AIzaSyAA5xdmfQxlETev8DsNtxpRu3Dyyn9ZAv4",authDomain:"our-playlist-afbcb.firebaseapp.com",databaseURL:"https://our-playlist-afbcb-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"our-playlist-afbcb",storageBucket:"our-playlist-afbcb.firebasestorage.app",messagingSenderId:"110112975157",appId:"1:110112975157:web:5b341e9824e81f5eacc47c"};
+firebase.initializeApp(FB);
+const db=firebase.database();
+let ref=null,gid='',pending=null,firstSnap=true;
+async function hashCode(c){
+  const norm=c.trim().toLowerCase().replace(/\s+/g,' ');
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('our-playlist:'+norm));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function uploadLocal(){
+  if(!localOld.length)return;
+  localOld.forEach(v=>{if(!list.some(x=>x.p===v.p&&x.id===v.id)){const o={p:v.p,id:v.id,url:v.url};if(v.kind)o.kind=v.kind;if(v.len)o.len=v.len;ref.push(o)}});
+  try{localStorage.removeItem('playlist.v1')}catch(e){}
+  localOld=[];
+}
+function connect(id){
+  gid=id;document.body.classList.remove('nogroup');
+  ref=db.ref('groups/'+id+'/videos');
+  const tag='Group ID '+id.slice(0,4);
+  $('grp').textContent=tag+' · connecting…';
+  db.ref('.info/connected').on('value',s=>{$('grp').textContent=tag+(s.val()?' · connected':' · offline')+'. Everyone with your passcode shares this list.'});
+  ref.on('value',snap=>{
+    const arr=[];snap.forEach(ch=>{arr.push(Object.assign({key:ch.key},ch.val()))});
+    list=arr;idx=curKey?list.findIndex(x=>x.key===curKey):-1;
+    if(firstSnap){firstSnap=false;uploadLocal();if(pending){const t=pending;pending=null;add(t)}}
+    render();
+  },err=>say('Could not reach the group ('+(err.code||'error')+'). Check the passcode and your connection.'));
+}
+$('joinBtn').onclick=async()=>{
+  const c=$('code').value;
+  if(c.trim().length<8){$('joinMsg').textContent='The passcode needs at least 8 characters.';return}
+  const id=await hashCode(c);
+  try{localStorage.setItem('groupId',id)}catch(e){}
+  connect(id);
+};
+$('code').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinBtn').click()});
+$('leave').onclick=()=>{if(confirm('Leave the group on this phone? You can rejoin with the passcode.')){try{localStorage.removeItem('groupId')}catch(e){}location.reload()}};
+function start(){
+  let id=null;try{id=localStorage.getItem('groupId')}catch(e){}
+  if(id)connect(id);else document.body.classList.add('nogroup');
+}
+importShare();render();start();
 </script>
 </body>
 </html>
