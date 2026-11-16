@@ -22,6 +22,9 @@ h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-s
 .stage[data-p=yt]{border-color:var(--yt)}.stage[data-p=ig]{border-color:var(--ig)}.stage[data-p=fb]{border-color:var(--fb)}
 .pane{position:absolute;inset:0;display:none;background:#000}
 .pane.on{display:block}
+#gifPane img{width:100%;height:100%;object-fit:contain;display:block}
+.badge.gif{background:var(--accent);color:var(--on-accent)}
+.stage[data-p=gif]{border-color:var(--accent)}
 .pane iframe,.pane>div,.pane .fb-video,.pane span{width:100%!important;height:100%!important}
 .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;color:var(--muted);font-size:1rem}
 #bar{display:flex;gap:6px;justify-content:center;width:min(100%,560px);margin:10px auto 0}
@@ -50,14 +53,27 @@ li button{padding:8px 11px}
 body.nogroup #join{display:block}
 body.nogroup main>*:not(#join):not(h1){display:none}
 #grp{margin:0 0 8px}
-#chat{position:absolute;left:0;right:0;bottom:0;height:58%;z-index:6;display:flex;flex-direction:column;background:rgba(3,26,6,.8);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-top:1px solid var(--line)}
+#chat{position:absolute;left:0;right:0;bottom:0;height:60%;z-index:6;display:flex;flex-direction:column;pointer-events:none}
 #chat[hidden]{display:none}
-.chead,.cform{display:flex;gap:8px;padding:8px}
-.chead input,.cform input{flex:1;min-width:0;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+#chat.named .chead{display:none}
+.chead,.cform{display:flex;gap:8px;padding:8px;pointer-events:auto}
+.chead input,.cform input{flex:1;min-width:0;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.6);color:var(--ink)}
+.chead button,.cform button{background:rgba(0,0,0,.6)}
 .chead button{padding:8px 12px}
-#cmsgs{flex:1;overflow-y:auto;padding:4px 10px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
-.m{max-width:85%;padding:6px 10px;border-radius:12px;background:rgba(25,255,60,.08);border:1px solid var(--line);align-self:flex-start;overflow-wrap:anywhere}
-.m.me{align-self:flex-end;border-color:var(--muted)}
+#cmsgs{flex:1;overflow:hidden;padding:4px 10px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;font-size:.92rem}
+#cnote{min-height:1.2em;padding:0 12px;font-size:.8rem;color:var(--ink);text-shadow:0 0 6px #000}
+.m{max-width:85%;padding:6px 10px;border-radius:14px;background:rgba(0,0,0,.62);border:1px solid rgba(25,255,60,.25);align-self:flex-start;overflow-wrap:anywhere}
+.m.me{align-self:flex-end;border-color:rgba(25,255,60,.5)}
+#gp{position:absolute;left:8px;right:8px;bottom:68px;max-height:min(320px,70%);display:flex;flex-direction:column;background:rgba(0,0,0,.84);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:14px;pointer-events:auto;z-index:7}
+#gp[hidden]{display:none}
+.gphead{display:flex;gap:8px;padding:8px}
+.gphead input{flex:1;min-width:0;font:inherit;padding:9px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.6);color:var(--ink)}
+.gphead button{padding:8px 12px;background:rgba(0,0,0,.6)}
+#gres{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 8px 6px;overflow-y:auto}
+#gres button{padding:0;border:0;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:1/1}
+#gres img{width:100%;height:100%;object-fit:cover;display:block}
+.gpow{padding:2px 10px 8px;font-size:.7rem;color:var(--muted)}
+.gifmsg{display:block;width:170px;max-width:100%;border-radius:10px;margin-top:2px}
 .m b{display:block;font-size:.72rem;color:var(--muted);font-weight:600}
 </style>
 </head>
@@ -69,10 +85,18 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 <div class="pane" id="ytPane"><div id="ytBox"></div></div>
 <div class="pane" id="igPane"></div>
 <div class="pane" id="fbPane"></div>
+<div class="pane" id="gifPane"></div>
 <div id="chat" hidden>
 <div class="chead"><input id="cname" type="text" maxlength="20" placeholder="Your name" aria-label="Your name"><button id="cclose" type="button" aria-label="Close chat">&#10005;</button></div>
 <div id="cmsgs" aria-live="polite"></div>
-<div class="cform"><input id="ctext" type="text" maxlength="500" placeholder="Message" autocomplete="off" aria-label="Message"><button id="csend" type="button" class="main">Send</button></div>
+<div id="gp" hidden>
+<div class="gphead"><input id="gq" type="text" placeholder="Search GIPHY" autocomplete="off" aria-label="Search GIFs"><button id="gx" type="button" aria-label="Close GIF search">&#10005;</button></div>
+<div id="gres"></div>
+<div class="gpow">Powered by GIPHY</div>
+</div>
+<div id="cnote" aria-live="polite"></div>
+<div class="cform"><input id="ctext" type="text" maxlength="500" placeholder="Message" autocomplete="off" aria-label="Message"><button id="gifBtn" type="button">GIF</button>
+<button id="csend" type="button" class="main">Send</button></div>
 </div>
 </div>
 <div id="bar">
@@ -101,6 +125,7 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 <ul id="list"></ul>
 
 <div class="foot">
+<button id="rename" type="button">Change name</button>
 <button id="leave" type="button">Leave group</button>
 <button id="clear" type="button">Clear list</button>
 </div>
@@ -121,6 +146,8 @@ function parse(text){
   const u=m0[0].replace(/[)\].,]+$/,'');let m;
   if(m=u.match(/(?:youtube\.com\/(?:shorts\/|watch\?(?:[^ ]*&)?v=|embed\/|live\/)|youtu\.be\/)([\w-]{11})/i))return{p:'yt',id:m[1],url:u};
   if(m=u.match(/instagram\.com\/(?:[\w.]+\/)?(reels?|p|tv)\/([\w-]+)/i))return{p:'ig',id:m[2],kind:m[1]==='reels'?'reel':m[1],url:u};
+  if(m=u.match(/media\d*\.giphy\.com\/media\/(?:v1\.[^\/]+\/)?([A-Za-z0-9]+)\//)||u.match(/giphy\.com\/(?:gifs|stickers|embed)\/(?:[^\/?#\s]*-)?([A-Za-z0-9]+)(?:[\/?#]|$)/))return{p:'gif',id:m[1],url:u,src:'https://media.giphy.com/media/'+m[1]+'/giphy.gif'};
+  if(/\.(?:gif|webp)(?:[?#]|$)/i.test(u))return{p:'gif',id:u,url:u,src:u};
   if(/(facebook\.com|fb\.watch|fb\.com)/i.test(u))return{p:'fb',id:u,url:u};
   return null;
 }
@@ -129,7 +156,7 @@ function add(text){
   if(!v){say('That doesn’t look like an Instagram, YouTube or Facebook video link.');return false}
   if(!ref){pending=text;return false}
   if(list.some(x=>x.p===v.p&&x.id===v.id)){say('That video is already in the list.');return false}
-  const o={p:v.p,id:v.id,url:v.url};if(v.kind)o.kind=v.kind;
+  const o={p:v.p,id:v.id,url:v.url};if(v.kind)o.kind=v.kind;if(v.src)o.src=v.src;
   ref.push(o).then(()=>say('Added to the group playlist.')).catch(e=>say('Could not add it ('+(e.code||'error')+').'));
   return true;
 }
@@ -141,7 +168,7 @@ $('addBtn').onclick=()=>{if(add($('paste').value))$('paste').value=''};
 $('paste').addEventListener('keydown',e=>{if(e.key==='Enter')$('addBtn').click()});
 $('paste').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');setTimeout(()=>{if(add(t))$('paste').value=''},0)});
 
-const NAMES={yt:'YouTube',ig:'Instagram',fb:'Facebook'},TAGS={yt:'YT',ig:'IG',fb:'FB'};
+const NAMES={yt:'YouTube',ig:'Instagram',fb:'Facebook',gif:'GIF'},TAGS={yt:'YT',ig:'IG',fb:'FB',gif:'GIF'};
 function render(){
   $('toList').textContent=list.length?'List ('+list.length+')':'List';
   const ul=$('list');ul.textContent='';
@@ -151,7 +178,7 @@ function render(){
     const l=document.createElement('div');l.className='lbl';l.textContent=(i+1)+'. '+NAMES[v.p]+' · '+v.url.replace(/^https?:\/\/(www\.)?/,'');
     l.onclick=()=>playAt(i);
     li.append(b,l);
-    if(v.p==='ig'){
+    if(v.p==='ig'||v.p==='gif'){
       const n=document.createElement('input');n.className='len';n.type='number';n.min='1';n.inputMode='numeric';n.placeholder='sec';n.title='Reel length in seconds';n.setAttribute('aria-label','Reel length in seconds');
       n.value=v.len||'';n.oninput=()=>{v.len=parseInt(n.value)||0;ref.child(v.key).update({len:v.len})};
       li.append(n);
@@ -206,11 +233,20 @@ function igGo(v){
     timer=setTimeout(next,v.len*1000);
   }else{$('now').textContent='Instagram: tap play, then tap Next when it ends (or add its length in the list).'}
 }
+function gifGo(v){
+  const im=document.createElement('img');im.alt='GIF';
+  im.onerror=()=>{say('Skipped a GIF that can’t be shown.');setTimeout(next,800)};
+  im.src=v.src;$('gifPane').textContent='';$('gifPane').appendChild(im);
+  let left=v.len>0?v.len:8;
+  $('now').textContent='GIF · next in '+left+'s';
+  tick=setInterval(()=>{left--;if(left>0)$('now').textContent='GIF · next in '+left+'s'},1000);
+  timer=setTimeout(next,(v.len>0?v.len:8)*1000);
+}
 function stopAll(){
   clearTimeout(timer);clearInterval(tick);timer=tick=null;
   try{if(ytPlayer&&ytPlayer.stopVideo)ytPlayer.stopVideo()}catch(e){}
-  $('igPane').textContent='';$('fbPane').textContent='';
-  ['yt','ig','fb'].forEach(p=>$(p+'Pane').classList.remove('on'));
+  $('igPane').textContent='';$('fbPane').textContent='';$('gifPane').textContent='';
+  ['yt','ig','fb','gif'].forEach(p=>$(p+'Pane').classList.remove('on'));
   $('stage').dataset.p='';$('empty').style.display='flex';$('now').textContent='';
 }
 function playAt(i){
@@ -218,7 +254,7 @@ function playAt(i){
   stopAll();idx=i;const v=list[i];curKey=v.key;
   $('empty').style.display='none';$('stage').dataset.p=v.p;$(v.p+'Pane').classList.add('on');
   $('now').textContent=(i+1)+' of '+list.length+' · '+NAMES[v.p];
-  if(v.p==='yt')ytGo(v.id);else if(v.p==='fb')fbGo(v.url);else igGo(v);
+  if(v.p==='yt')ytGo(v.id);else if(v.p==='fb')fbGo(v.url);else if(v.p==='gif')gifGo(v);else igGo(v);
   render();say('');
 }
 function next(){playAt(idx+1)}
@@ -257,17 +293,20 @@ try{$('cname').value=localStorage.getItem('chatName')||''}catch(e){}
 $('cname').addEventListener('input',()=>{try{localStorage.setItem('chatName',$('cname').value.trim())}catch(e){}});
 const chatOpen=()=>!$('chat').hidden;
 function seenKey(){try{return localStorage.getItem('chatSeen:'+gid)||''}catch(e){return ''}}
-function updateChatBtn(){const s=seenKey();const n=chatOpen()?0:cmsgs.filter(m=>m.key>s&&m.c!==cid).length;$('chatBtn').textContent=n?'Chat ('+n+')':'Chat'}
+function updateChatBtn(){const s=seenKey();const n=chatOpen()?0:cmsgs.filter(m=>m.key>s&&m.c!==cid&&!parse(m.t||'')).length;$('chatBtn').textContent=n?'Chat ('+n+')':'Chat'}
 function markSeen(){const last=cmsgs.length?cmsgs[cmsgs.length-1].key:'';if(last){try{localStorage.setItem('chatSeen:'+gid,last)}catch(e){}}updateChatBtn()}
 function renderChat(){
   const box=$('cmsgs');const atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<60;
   box.textContent='';
-  cmsgs.forEach(m=>{
+  cmsgs.filter(m=>!parse(m.t||'')).slice(-30).forEach(m=>{
     const d=document.createElement('div');d.className='m'+(m.c===cid?' me':'');
     const b=document.createElement('b');const t=m.ts?new Date(m.ts):null;
     b.textContent=(m.n||'Someone')+(t?' · '+t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'');
     const x=document.createElement('span');x.textContent=m.t||'';
-    d.append(b,x);box.append(d);
+    d.append(b);
+    if(m.t)d.append(x);
+    if(m.g&&okGif(m.g)){const im=document.createElement('img');im.src=m.g;im.alt='GIF';im.className='gifmsg';im.loading='lazy';d.append(im)}
+    box.append(d);
   });
   if(atEnd||chatOpen())box.scrollTop=box.scrollHeight;
 }
@@ -278,20 +317,71 @@ function startChat(id){
     cmsgs=arr;renderChat();if(chatOpen())markSeen();else updateChatBtn();
   });
 }
+let noteT=null;
+function chatNote(t){$('cnote').textContent=t;clearTimeout(noteT);noteT=setTimeout(()=>{$('cnote').textContent=''},3500)}
 function sendChat(){
-  const name=$('cname').value.trim(),text=$('ctext').value.trim();
-  if(!name){$('cname').placeholder='Type your name first';$('cname').focus();return}
+  let text=$('ctext').value.trim();
   if(!text||!cref)return;
+  const v=parse(text);
+  if(v){
+    $('ctext').value='';
+    if(list.some(x=>x.p===v.p&&x.id===v.id))chatNote('Already in the playlist.');
+    else{add(text);chatNote('Added to the playlist ✓')}
+    text=text.replace(/https?:\/\/\S+/,'').trim();
+    if(!text)return;
+  }
+  const name=$('cname').value.trim();
+  if(!name){$('ctext').value=text;$('cname').placeholder='Type your name first';$('cname').focus();return}
+  $('chat').classList.add('named');
   cref.push({n:name,t:text,c:cid,ts:firebase.database.ServerValue.TIMESTAMP}).catch(e=>say('Could not send ('+(e.code||'error')+').'));
   $('ctext').value='';
+}
+const GIPHY_KEY='hZ2zopZIQnRTkyWS1DQYAMqYh5Z4rBA5';
+let gTimer=null,gTrend=null;
+const okGif=u=>/^https:\/\/media\d*\.giphy\.com\//.test(u||'');
+function gMsg(t){const box=$('gres');box.textContent='';const d=document.createElement('div');d.className='small';d.style.gridColumn='1/-1';d.textContent=t;box.append(d)}
+function gShow(items){
+  const box=$('gres');box.textContent='';
+  if(!items.length){gMsg('No GIFs found.');return}
+  items.forEach(it=>{
+    const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Send this GIF');
+    const im=document.createElement('img');im.src=it.images.fixed_width_small.url;im.alt='';im.loading='lazy';
+    b.append(im);b.onclick=()=>sendGif(it.images.fixed_width.url);box.append(b);
+  });
+}
+async function gLoad(q){
+  if(GIPHY_KEY.startsWith('PASTE')){gMsg('GIF search isn’t set up yet. It needs a GIPHY key.');return}
+  if(!q&&gTrend){gShow(gTrend);return}
+  gMsg('Loading…');
+  try{
+    const url='https://api.giphy.com/v1/gifs/'+(q?'search':'trending')+'?api_key='+encodeURIComponent(GIPHY_KEY)+(q?'&q='+encodeURIComponent(q):'')+'&limit=18&rating=pg';
+    const r=await fetch(url);
+    if(!r.ok)throw new Error(r.status);
+    const j=await r.json();
+    const items=(j.data||[]).filter(x=>x.images&&x.images.fixed_width&&x.images.fixed_width_small);
+    if(!q)gTrend=items;
+    gShow(items);
+  }catch(e){gMsg(String(e.message)==='429'?'GIPHY is busy. Try again in a little while.':'Couldn’t load GIFs.')}
+}
+$('gifBtn').onclick=()=>{const g=$('gp');g.hidden=!g.hidden;if(!g.hidden){$('gq').value='';gLoad('');$('gq').focus()}};
+$('gx').onclick=()=>{$('gp').hidden=true};
+$('gq').addEventListener('input',()=>{clearTimeout(gTimer);const q=$('gq').value.trim();gTimer=setTimeout(()=>{if(q.length===0||q.length>=2)gLoad(q)},500)});
+function sendGif(url){
+  if(!okGif(url)||!cref)return;
+  const name=$('cname').value.trim();
+  $('gp').hidden=true;
+  if(!name){$('cname').placeholder='Type your name first';$('cname').focus();return}
+  $('chat').classList.add('named');
+  cref.push({n:name,g:url,c:cid,ts:firebase.database.ServerValue.TIMESTAMP}).catch(e=>say('Could not send ('+(e.code||'error')+').'));
 }
 $('csend').onclick=sendChat;
 $('ctext').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
 $('chatBtn').onclick=()=>{
-  const c=$('chat');c.hidden=!c.hidden;
-  if(!c.hidden){renderChat();markSeen();if(!$('cname').value.trim())$('cname').focus()}else updateChatBtn();
+  const c=$('chat');c.hidden=!c.hidden;$('gp').hidden=true;
+  if(!c.hidden){c.classList.toggle('named',!!$('cname').value.trim());renderChat();markSeen();if(!$('cname').value.trim())$('cname').focus()}else updateChatBtn();
 };
-$('cclose').onclick=()=>{$('chat').hidden=true;updateChatBtn()};
+$('rename').onclick=()=>{try{localStorage.removeItem('chatName')}catch(e){}$('cname').value='';$('chat').classList.remove('named');$('chat').hidden=false;$('stage').scrollIntoView({behavior:'smooth'});$('cname').focus();updateChatBtn()};
+$('cclose').onclick=()=>{$('chat').hidden=true;$('gp').hidden=true;updateChatBtn()};
 function connect(id){
   gid=id;document.body.classList.remove('nogroup');
   ref=db.ref('groups/'+id+'/videos');startChat(id);
