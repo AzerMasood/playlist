@@ -104,6 +104,26 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 .rpbox button:active{background:rgba(25,255,60,.28)}
 .igwrap{position:absolute;overflow:hidden;background:#000}
 .igf{position:absolute;border:0;background:#000;max-width:none}
+/* swipe-to-reply, quotes */
+.m{touch-action:pan-y}
+.m.flash{animation:fl 1.3s ease-out}
+@keyframes fl{0%,100%{box-shadow:0 0 0 0 rgba(25,255,60,0)}25%{box-shadow:0 0 0 3px rgba(25,255,60,.8)}}
+.quote{margin:2px 0 4px;padding:3px 8px;border-left:3px solid var(--ink);border-radius:6px;background:rgba(25,255,60,.1);cursor:pointer}
+.quote .qt{font-size:.72rem;color:var(--ink);opacity:.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#rbar{flex:none;display:flex;align-items:center;gap:8px;margin:0 8px 2px;padding:5px 6px 5px 10px;border-left:3px solid var(--ink);border-radius:8px;background:rgba(0,0,0,.72);pointer-events:auto;font-size:.76rem}
+#rbar[hidden]{display:none}
+#rbar .rq{flex:1;min-width:0}
+#rbar .rq b{display:block;font-size:.62rem;color:var(--muted);font-weight:600}
+#rt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+#rbar button{padding:2px 9px;font-size:.85rem;background:transparent;border:0;color:var(--muted)}
+.cform #ttsBtn.on{border-color:var(--ink);color:var(--ink)}
+.rpact{grid-column:1/-1;display:flex;gap:6px;margin-top:4px}
+.rpbox .rpa{width:auto;flex:1;height:38px;font-size:.85rem;padding:0 10px;border:1px solid var(--line);border-radius:12px;color:var(--ink);background:rgba(0,0,0,.4)}
+/* keyboard alternate characters */
+.kk{position:relative}
+.kk .ka{position:absolute;top:2px;right:5px;font-size:.6rem;line-height:1;color:var(--muted);text-shadow:none;pointer-events:none}
+.kk.alt{background:rgba(25,255,60,.5)}
+.kk.alt .ka{font-size:1rem;top:0;right:4px;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -126,7 +146,8 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 </div>
 <div id="cnote" aria-live="polite"></div>
 <div id="kb" hidden></div>
-<div class="cform"><textarea id="ctext" rows="1" inputmode="none" enterkeyhint="send" maxlength="500" placeholder="Message" autocomplete="off" aria-label="Message"></textarea><button id="gifBtn" type="button">GIF</button>
+<div id="rbar" hidden><div class="rq"><b id="rn"></b><div id="rt"></div></div><button id="rcancel" type="button" aria-label="Cancel reply">&#10005;</button></div>
+<div class="cform"><textarea id="ctext" rows="1" inputmode="none" enterkeyhint="send" maxlength="500" placeholder="Message" autocomplete="off" aria-label="Message"></textarea><button id="gifBtn" type="button">GIF</button><button id="ttsBtn" type="button" aria-pressed="false" title="Read new messages aloud">🔇</button>
 <button id="csend" type="button" class="main">Send</button></div>
 </div>
 </div>
@@ -162,7 +183,7 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 <button id="leave" type="button">Leave group</button>
 <button id="clear" type="button">Clear list</button>
 </div>
-<p class="small">Only links are saved, shared with everyone in your group. YouTube and Facebook move on by themselves. Long-press your own message to edit it; double-tap any message to react. Everything starts by itself. Instagram can’t say when a reel ends, so tap Next when it finishes. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
+<p class="small">Only links are saved, shared with everyone in your group. YouTube and Facebook move on by themselves. Long-press your own message to edit it; double-tap any message to react, reply or hear it read aloud; swipe a message sideways to reply. Long-press a letter key to type the small symbol on it. The speaker button reads new messages aloud. Everything starts by itself. Instagram can’t say when a reel ends, so tap Next when it finishes. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -349,20 +370,38 @@ function react(key,emoji){
   buzz(12);
 }
 function bindBubble(d,m,mine){
-  let tm=null,moved=false,long=false,sx=0,sy=0,last=0;
+  let tm=null,moved=false,long=false,sx=0,sy=0,last=0,down=false,swiping=false,armed=false;
   d.addEventListener('contextmenu',e=>e.preventDefault());
   d.addEventListener('mousedown',e=>{if(editKey===m.key&&e.target!==editEl)e.preventDefault()});
   d.addEventListener('pointerdown',e=>{
     if(editKey)return;
-    moved=false;long=false;sx=e.clientX;sy=e.clientY;
+    moved=false;long=false;sx=e.clientX;sy=e.clientY;down=true;swiping=false;armed=false;
     if(mine&&m.t)tm=setTimeout(()=>{long=true;startEdit(m,d)},500);
   });
-  d.addEventListener('pointermove',e=>{if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>10){moved=true;clearTimeout(tm)}});
+  d.addEventListener('pointermove',e=>{
+    if(!down)return;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(!swiping&&!editKey&&Math.abs(dx)>14&&Math.abs(dx)>Math.abs(dy)*1.5){swiping=true;clearTimeout(tm);try{d.setPointerCapture(e.pointerId)}catch(x){}}
+    if(swiping){
+      d.style.transition='none';d.style.transform='translateX('+Math.max(-90,Math.min(90,dx))+'px)';
+      if(Math.abs(dx)>=60){if(!armed){armed=true;buzz(12)}}else armed=false;
+      return;
+    }
+    if(Math.abs(dx)+Math.abs(dy)>10){moved=true;clearTimeout(tm)}
+  });
   ['pointercancel','pointerleave'].forEach(t=>d.addEventListener(t,()=>clearTimeout(tm)));
-  d.addEventListener('pointerup',()=>{
-    clearTimeout(tm);
+  d.addEventListener('pointercancel',()=>{down=false;swiping=false;armed=false;d.style.transition='transform .2s';d.style.transform=''});
+  d.addEventListener('pointerup',e=>{
+    clearTimeout(tm);down=false;
+    if(swiping){
+      swiping=false;const go=armed;armed=false;
+      d.style.transition='transform .2s';d.style.transform='';
+      if(go)startReply(m);
+      return;
+    }
     if(editKey===m.key){if(editEl&&document.activeElement!==editEl)editEl.focus({preventScroll:true});return}
     if(editKey||long||moved)return;
+    if(m.rp&&e.target.closest&&e.target.closest('.quote')){jumpTo(m.rp.k);return}
     const now=Date.now();
     if(now-last<320){last=0;openReact(m.key)}else last=now;
   });
@@ -411,10 +450,16 @@ function renderChat(){
   }).slice(-100);
   vis.forEach(m=>{
     const mine=m.c===cid;
-    const d=document.createElement('div');d.className='m'+(mine?' me':'');
+    const d=document.createElement('div');d.className='m'+(mine?' me':'');d.dataset.key=m.key;
     const b=document.createElement('b');const t=m.ts?new Date(m.ts):null;
     b.textContent=(m.n||'Someone')+(t?' · '+t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'')+(m.ed?' · edited':'');
     d.append(b);
+    if(m.rp&&m.rp.t){
+      const q=document.createElement('div');q.className='quote';
+      const qb=document.createElement('b');qb.textContent=String(m.rp.n||'Someone');
+      const qt=document.createElement('div');qt.className='qt';qt.textContent=String(m.rp.t);
+      q.append(qb,qt);d.append(q);
+    }
     if(m.t){const x=document.createElement('span');x.textContent=m.t;d.append(x)}
     if(m.g&&okGif(m.g)){const im=document.createElement('img');im.alt='GIF';im.className='gifmsg';im.onload=()=>{const dist=box.scrollHeight-box.scrollTop-box.clientHeight;if(!editKey&&dist<=im.offsetHeight+60)box.scrollTop=box.scrollHeight};im.src=m.g;d.append(im)}
     const rx=m.r?Object.keys(m.r).filter(k=>m.r[k]&&Object.keys(m.r[k]).length).sort():[];
@@ -443,7 +488,7 @@ function startChat(id){
   cref=db.ref('groups/'+id+'/chat');
   cref.limitToLast(100).on('value',snap=>{
     const arr=[];snap.forEach(ch=>{arr.push(Object.assign({key:ch.key},ch.val()))});
-    cmsgs=arr;renderChat();if(chatOpen())markSeen();else updateChatBtn();
+    cmsgs=arr;ttsNew(arr);renderChat();if(chatOpen())markSeen();else updateChatBtn();
   });
 }
 let noteT=null;
@@ -470,7 +515,7 @@ function sendChat(){
   }
   if(!myName){$('ctext').value=text;focusName();return}
   stickBottom=true;
-  cref.push({n:myName,t:text,c:cid,ts:firebase.database.ServerValue.TIMESTAMP}).catch(e=>say('Could not send ('+(e.code||'error')+').'));
+  cref.push(withReply({n:myName,t:text,c:cid,ts:firebase.database.ServerValue.TIMESTAMP})).catch(e=>say('Could not send ('+(e.code||'error')+').'));
   $('ctext').value='';fitBox($('ctext'));kbAuto();
 }
 const GIPHY_KEY='hZ2zopZIQnRTkyWS1DQYAMqYh5Z4rBA5';
@@ -508,7 +553,7 @@ function sendGif(url){
   $('gp').hidden=true;$('chat').classList.remove('gifopen');
   if(!myName){focusName();return}
   stickBottom=true;
-  cref.push({n:myName,g:url,c:cid,ts:firebase.database.ServerValue.TIMESTAMP}).catch(e=>say('Could not send ('+(e.code||'error')+').'));
+  cref.push(withReply({n:myName,g:url,c:cid,ts:firebase.database.ServerValue.TIMESTAMP})).catch(e=>say('Could not send ('+(e.code||'error')+').'));
   $('ctext').focus();
 }
 function setVH(){document.documentElement.style.setProperty('--vh',(document.documentElement.clientHeight||window.innerHeight)+'px')}
@@ -517,7 +562,19 @@ setVH();window.addEventListener('resize',setVH);window.addEventListener('orienta
 /* on-screen keyboard */
 let kbTarget=$('ctext'),kbSym=false,kbShift=true,kbRep=null;
 const KB_L=['qwertyuiop','asdfghjkl','zxcvbnm'],KB_S=['1234567890','-/:;()$&@"',".,?!'#+"];
-function kbKey(k,label,cls){const b=document.createElement('button');b.type='button';b.className='kk'+(cls?' '+cls:'');b.dataset.k=k;b.textContent=label;return b}
+const ALT={q:'+',w:'×',e:'÷',r:'=',t:'/',y:'_',u:'<',i:'>',o:'[',p:']',a:'!',s:'@',d:'#',f:'$',g:'%',h:'&',j:'*',k:'(',l:')',z:'-',x:"'",c:'"',v:':',b:';',n:',',m:'?'};
+const kbAltMap=new Map();
+function kbKey(k,label,cls){
+  const b=document.createElement('button');b.type='button';b.className='kk'+(cls?' '+cls:'');b.dataset.k=k;
+  const l=document.createElement('span');l.className='kl';l.textContent=label;b.append(l);
+  if(Object.prototype.hasOwnProperty.call(ALT,k)){const a=document.createElement('span');a.className='ka';a.textContent=ALT[k];b.append(a)}
+  return b;
+}
+function kbAlt(ch){
+  const el=kbTarget;if(!el)return;
+  if(document.activeElement!==el&&!el.closest('[hidden]'))el.focus({preventScroll:true});
+  kbEdit(el,ch);kbAuto();
+}
 function buildKb(){
   const kb=$('kb');kb.textContent='';
   (kbSym?KB_S:KB_L).forEach((r,i)=>{
@@ -534,7 +591,7 @@ function buildKb(){
 function kbRefresh(){
   document.querySelectorAll('#kb .kk').forEach(b=>{
     const k=b.dataset.k;
-    if(!kbSym&&/^[a-z]$/.test(k))b.textContent=kbShift?k.toUpperCase():k;
+    if(!kbSym&&/^[a-z]$/.test(k))(b.querySelector('.kl')||b).textContent=kbShift?k.toUpperCase():k;
     if(k==='shift')b.classList.toggle('on',kbShift);
   });
 }
@@ -603,6 +660,13 @@ kbEl.addEventListener('pointerdown',e=>{
   const k=b.dataset.k;
   buzz(k==='enter'?18:8);
   if(k==='space'){spX=e.clientX;spDrag=false;spAcc=0;return}
+  if(!kbSym&&Object.prototype.hasOwnProperty.call(ALT,k)){
+    /* letter keys type on release; holding types the small symbol instead */
+    const en={b,k,done:false};
+    en.t=setTimeout(()=>{en.done=true;b.classList.add('alt');buzz(15);kbAlt(ALT[k])},380);
+    kbAltMap.set(e.pointerId,en);
+    return;
+  }
   kbPress(k);
   if(k==='back'){clearTimeout(kbRep);kbRep=setTimeout(function r(){kbPress('back');buzz(6);kbRep=setTimeout(r,70)},400)}
 });
@@ -612,14 +676,73 @@ kbEl.addEventListener('pointermove',e=>{
   if(Math.abs(spAcc)>=12){const n=Math.trunc(spAcc/12);spAcc-=n*12;spDrag=true;kbMoveCaret(n);buzz(3)}
 });
 function endSpace(typeIt){if(spX===null)return;const dragged=spDrag;spX=null;spDrag=false;spAcc=0;if(typeIt&&!dragged)kbPress('space')}
-kbEl.addEventListener('pointerup',()=>{clearTimeout(kbRep);endSpace(true)});
-['pointercancel','pointerleave'].forEach(t=>kbEl.addEventListener(t,()=>{clearTimeout(kbRep);endSpace(false)}));
+kbEl.addEventListener('pointerup',e=>{
+  clearTimeout(kbRep);
+  const en=kbAltMap.get(e.pointerId);
+  if(en){clearTimeout(en.t);en.b.classList.remove('alt');kbAltMap.delete(e.pointerId);if(!en.done)kbPress(en.k)}
+  endSpace(true);
+});
+['pointercancel','pointerleave'].forEach(t=>kbEl.addEventListener(t,e=>{
+  clearTimeout(kbRep);
+  const en=kbAltMap.get(e.pointerId);
+  if(en){clearTimeout(en.t);en.b.classList.remove('alt');kbAltMap.delete(e.pointerId)}
+  endSpace(false);
+}));
 window.addEventListener('pointerup',()=>clearTimeout(kbRep));
 kbEl.addEventListener('mousedown',e=>e.preventDefault());
 kbEl.addEventListener('contextmenu',e=>e.preventDefault());
 buildKb();
 function kbBind(el){el.addEventListener('focus',()=>{kbTarget=el;$('kb').hidden=false;kbAuto();window.scrollTo(0,0)})}
 ['ctext','gq','cname'].forEach(id=>kbBind($(id)));
+
+/* reply */
+let replyTo=null;
+function startReply(m){
+  if(editKey)return;
+  replyTo={k:m.key,n:String(m.n||'Someone'),t:(m.t?m.t:'GIF').replace(/\s+/g,' ').slice(0,80)};
+  $('rn').textContent=replyTo.n;$('rt').textContent=replyTo.t;$('rbar').hidden=false;
+  buzz(15);$('ctext').focus({preventScroll:true});
+}
+function clearReply(){replyTo=null;$('rbar').hidden=true}
+function withReply(o){if(replyTo){o.rp={k:replyTo.k,n:replyTo.n,t:replyTo.t};clearReply()}return o}
+function jumpTo(key){
+  const el=Array.from($('cmsgs').querySelectorAll('.m')).find(x=>x.dataset.key===key);
+  if(!el){chatNote('That message is no longer here.');return}
+  el.scrollIntoView({block:'center',behavior:'smooth'});
+  el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');
+}
+$('rcancel').onclick=clearReply;
+
+/* read aloud */
+const ttsOK='speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined';
+let ttsOn=false,ttsInit=false,ttsLast='';
+try{ttsOn=ttsOK&&localStorage.getItem('tts')==='1'}catch(e){}
+function speak(t,queue){
+  if(!ttsOK){chatNote('Read aloud isn’t supported in this browser.');return}
+  try{
+    if(!queue)speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t);u.lang=navigator.language||'en-US';
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function ttsPaint(){const b=$('ttsBtn');b.textContent=ttsOn?'🔊':'🔇';b.classList.toggle('on',ttsOn);b.setAttribute('aria-pressed',ttsOn?'true':'false')}
+function ttsNew(arr){
+  const last=arr.length?arr[arr.length-1].key:'';
+  if(!ttsInit){ttsInit=true;ttsLast=last;return}
+  const fresh=arr.filter(m=>m.key>ttsLast);
+  if(!fresh.length)return;
+  ttsLast=fresh[fresh.length-1].key;
+  if(!ttsOn)return;
+  fresh.forEach(m=>{if(m.c!==cid&&m.t&&!parse(m.t))speak((m.n||'Someone')+' says: '+m.t,true)});
+}
+if(!ttsOK)$('ttsBtn').hidden=true;
+ttsPaint();
+$('ttsBtn').onclick=()=>{
+  ttsOn=!ttsOn;try{localStorage.setItem('tts',ttsOn?'1':'0')}catch(e){}
+  ttsPaint();
+  if(ttsOn)speak('Read aloud on');else{try{speechSynthesis.cancel()}catch(e){}}
+  chatNote(ttsOn?'New messages will be read aloud.':'Read aloud off.');
+};
 
 /* reactions */
 const EMOJIS=['👍','❤️','😂','😮','😢','🔥','👏','🎉','💯','🤯','😍','🤔','👀','🙌','💀','😎','👎','🤣','😭','✅','🚀','🤝','😡','🥳'];
@@ -628,7 +751,14 @@ function openReact(key){if(editKey)return;rpKey=key;rpAt=Date.now();buzz(15);$('
 function closeReact(){$('rp').hidden=true;rpKey=null}
 EMOJIS.forEach(e=>{const b=document.createElement('button');b.type='button';b.textContent=e;b.setAttribute('aria-label','React '+e);b.onclick=()=>{const k=rpKey;closeReact();if(k)react(k,e)};$('rpbox').append(b)});
 $('rp').addEventListener('click',e=>{if(e.target===$('rp')&&Date.now()-rpAt>300)closeReact()});
-['csend','gifBtn','cok'].forEach(id=>$(id).addEventListener('mousedown',e=>e.preventDefault()));
+(()=>{
+  const ra=document.createElement('div');ra.className='rpact';
+  const acts=[['↩ Reply',()=>{const m=cmsgs.find(x=>x.key===rpKey);closeReact();if(m)startReply(m)}]];
+  if(ttsOK)acts.push(['🔊 Read aloud',()=>{const m=cmsgs.find(x=>x.key===rpKey);closeReact();if(!m)return;if(m.t)speak(m.t);else chatNote('GIFs can’t be read aloud.')}]);
+  acts.forEach(a=>{const b=document.createElement('button');b.type='button';b.className='rpa';b.textContent=a[0];b.onclick=a[1];ra.append(b)});
+  $('rpbox').append(ra);
+})();
+['csend','gifBtn','cok','ttsBtn','rcancel'].forEach(id=>$(id).addEventListener('mousedown',e=>e.preventDefault()));
 $('csend').onclick=sendChat;
 $('cok').onclick=commitName;
 $('ctext').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendChat()}});
