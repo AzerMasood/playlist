@@ -27,7 +27,7 @@ h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-s
 #gifPane img{width:100%;height:100%;object-fit:contain;display:block}
 .badge.gif{background:var(--accent);color:var(--on-accent)}
 
-.pane iframe,.pane>div,.pane .fb-video,.pane span{width:100%!important;height:100%!important}
+.pane iframe:not(.igf),.pane>div:not(.igwrap),.pane .fb-video,.pane span{width:100%!important;height:100%!important}
 .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;color:var(--muted);font-size:1rem}
 #bar{display:flex;flex:none;gap:6px;width:100%;margin:6px 0 0}
 #nameRow{display:flex;flex:none;gap:6px;margin:6px 0 0}
@@ -102,6 +102,8 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 .rpbox{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:10px;background:rgba(0,10,3,.92);border:1px solid var(--ink);border-radius:16px;box-shadow:0 0 18px rgba(25,255,60,.25);max-width:94%}
 .rpbox button{padding:0;width:44px;height:44px;font-size:1.45rem;border:0;background:transparent;border-radius:12px;line-height:1}
 .rpbox button:active{background:rgba(25,255,60,.28)}
+.igwrap{position:absolute;overflow:hidden;background:#000}
+.igf{position:absolute;border:0;background:#000;max-width:none}
 </style>
 </head>
 <body>
@@ -252,12 +254,27 @@ function fbGo(url){
   d.setAttribute('data-href',url);d.setAttribute('data-autoplay','true');d.setAttribute('data-show-text','false');d.setAttribute('data-allowfullscreen','true');
   box.appendChild(d);FB.XFBML.parse(box);
 }
+const IG_HEAD=59; /* Instagram's header height above its video box (measured from a screenshot) */
+function igFit(w){
+  const f=w.firstChild,st=$('stage'),W=st.clientWidth,H=st.clientHeight;
+  /* Instagram draws a 9:16 reel inside a 4:5 box (card width x 1.25). Pick the card width that makes the reel fill the stage. */
+  const cw=Math.round(Math.max(326,Math.min(540,W/0.703125,H/1.25)));
+  const bh=Math.round(cw*1.25);
+  const ww=Math.min(cw,W),wh=Math.min(bh,H);
+  w.style.width=ww+'px';w.style.height=wh+'px';
+  w.style.left=Math.round((W-ww)/2)+'px';w.style.top=Math.round((H-wh)/2)+'px';
+  f.style.width=cw+'px';f.style.height=(IG_HEAD+bh+260)+'px';
+  f.style.left=Math.round(-(cw-ww)/2)+'px';f.style.top=(-IG_HEAD-Math.round((bh-wh)/2))+'px';
+}
 function igGo(v){
-  const f=document.createElement('iframe');
+  const w=document.createElement('div');w.className='igwrap';
+  const f=document.createElement('iframe');f.className='igf';
   f.src='https://www.instagram.com/'+v.kind+'/'+v.id+'/embed';
   f.setAttribute('allow','autoplay; encrypted-media; fullscreen');f.setAttribute('allowfullscreen','');f.setAttribute('frameborder','0');f.setAttribute('scrolling','no');
-  $('igPane').textContent='';$('igPane').appendChild(f);
+  w.appendChild(f);igFit(w);
+  $('igPane').textContent='';$('igPane').appendChild(w);
 }
+window.addEventListener('resize',()=>{const w=document.querySelector('#igPane .igwrap');if(w)igFit(w)});
 function gifGo(v){
   const im=document.createElement('img');im.alt='GIF';
   im.onerror=()=>{say('Skipped a GIF that can’t be shown.');setTimeout(next,800)};
@@ -319,7 +336,7 @@ const chatOpen=()=>!$('chat').hidden;
 function seenKey(){try{return localStorage.getItem('chatSeen:'+gid)||''}catch(e){return ''}}
 function updateChatBtn(){const s=seenKey();const n=chatOpen()?0:cmsgs.filter(m=>m.key>s&&m.c!==cid&&!parse(m.t||'')).length;$('chatBtn').textContent=n?'Chat ('+n+')':'Chat'}
 function markSeen(){const last=cmsgs.length?cmsgs[cmsgs.length-1].key:'';if(last){try{localStorage.setItem('chatSeen:'+gid,last)}catch(e){}}updateChatBtn()}
-const GIF_LIFE=5000;let srvOff=0,gifT=null,stickBottom=false,editKey=null,editEl=null,editOrig="",chatDirty=false;
+const GIF_LIFE=5000;let srvOff=0,gifT=null,stickBottom=false,editKey=null,editEl=null,editOrig="",editAt=0,chatDirty=false;
 function srvNow(){return Date.now()+srvOff}
 const ekey=e=>Array.from(e).map(c=>c.codePointAt(0).toString(16)).join('_');
 const emojiOf=k=>String.fromCodePoint.apply(null,k.split('_').map(h=>parseInt(h,16)));
@@ -334,6 +351,7 @@ function react(key,emoji){
 function bindBubble(d,m,mine){
   let tm=null,moved=false,long=false,sx=0,sy=0,last=0;
   d.addEventListener('contextmenu',e=>e.preventDefault());
+  d.addEventListener('mousedown',e=>{if(editKey===m.key&&e.target!==editEl)e.preventDefault()});
   d.addEventListener('pointerdown',e=>{
     if(editKey)return;
     moved=false;long=false;sx=e.clientX;sy=e.clientY;
@@ -343,6 +361,7 @@ function bindBubble(d,m,mine){
   ['pointercancel','pointerleave'].forEach(t=>d.addEventListener(t,()=>clearTimeout(tm)));
   d.addEventListener('pointerup',()=>{
     clearTimeout(tm);
+    if(editKey===m.key){if(editEl&&document.activeElement!==editEl)editEl.focus({preventScroll:true});return}
     if(editKey||long||moved)return;
     const now=Date.now();
     if(now-last<320){last=0;openReact(m.key)}else last=now;
@@ -357,12 +376,16 @@ function startEdit(m,d){
   el.setAttribute('inputmode','none');el.setAttribute('enterkeyhint','done');el.setAttribute('aria-label','Edit message');
   const fit=()=>{el.style.width=Math.min(Math.max(el.value.length+1,4),40)+'ch'};
   fit();
-  editKey=m.key;editEl=el;editOrig=m.t;
+  editKey=m.key;editEl=el;editOrig=m.t;editAt=Date.now();
   span.replaceWith(el);d.classList.add('editing');
   kbBind(el);
   el.addEventListener('input',fit);
   el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commitEdit()}});
-  el.addEventListener('blur',()=>setTimeout(()=>{if(editEl===el)commitEdit()},0));
+  el.addEventListener('blur',()=>setTimeout(()=>{
+    if(editEl!==el)return;
+    if(Date.now()-editAt<800){el.focus({preventScroll:true});return}
+    commitEdit();
+  },0));
   el.focus({preventScroll:true});
   const n=el.value.length;try{el.setSelectionRange(n,n)}catch(x){}
 }
@@ -392,7 +415,7 @@ function renderChat(){
     b.textContent=(m.n||'Someone')+(t?' · '+t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'')+(m.ed?' · edited':'');
     d.append(b);
     if(m.t){const x=document.createElement('span');x.textContent=m.t;d.append(x)}
-    if(m.g&&okGif(m.g)){const im=document.createElement('img');im.src=m.g;im.alt='GIF';im.className='gifmsg';im.loading='lazy';d.append(im)}
+    if(m.g&&okGif(m.g)){const im=document.createElement('img');im.alt='GIF';im.className='gifmsg';im.onload=()=>{const dist=box.scrollHeight-box.scrollTop-box.clientHeight;if(!editKey&&dist<=im.offsetHeight+60)box.scrollTop=box.scrollHeight};im.src=m.g;d.append(im)}
     const rx=m.r?Object.keys(m.r).filter(k=>m.r[k]&&Object.keys(m.r[k]).length).sort():[];
     if(rx.length){
       const w=document.createElement('div');w.className='rx';
