@@ -116,7 +116,12 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 #rbar .rq b{display:block;font-size:.62rem;color:var(--muted);font-weight:600}
 #rt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
 #rbar button{padding:2px 9px;font-size:.85rem;background:transparent;border:0;color:var(--muted)}
-.cform #ttsBtn.on{border-color:var(--ink);color:var(--ink)}
+.cform #micBtn{display:flex;align-items:center;justify-content:center}
+.cform #micBtn[hidden]{display:none}
+.cform #micBtn.on{border-color:var(--ink);color:var(--ink);background:rgba(25,255,60,.28);animation:mp 1.1s ease-in-out infinite}
+@keyframes mp{0%,100%{box-shadow:0 0 0 0 rgba(25,255,60,0)}50%{box-shadow:0 0 8px 2px rgba(25,255,60,.6)}}
+/* emoji tinted to the app's green theme (remove this one rule for full-colour emoji) */
+.em{display:inline-block;filter:grayscale(1) sepia(1) hue-rotate(90deg) saturate(3) brightness(1.15)}
 .rpact{grid-column:1/-1;display:flex;gap:6px;margin-top:4px}
 .rpbox .rpa{width:auto;flex:1;height:38px;font-size:.85rem;padding:0 10px;border:1px solid var(--line);border-radius:12px;color:var(--ink);background:rgba(0,0,0,.4)}
 /* keyboard alternate characters */
@@ -147,7 +152,7 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 <div id="cnote" aria-live="polite"></div>
 <div id="kb" hidden></div>
 <div id="rbar" hidden><div class="rq"><b id="rn"></b><div id="rt"></div></div><button id="rcancel" type="button" aria-label="Cancel reply">&#10005;</button></div>
-<div class="cform"><textarea id="ctext" rows="1" inputmode="none" enterkeyhint="send" maxlength="500" placeholder="Message" autocomplete="off" aria-label="Message"></textarea><button id="gifBtn" type="button">GIF</button><button id="ttsBtn" type="button" aria-pressed="false" title="Read new messages aloud">🔇</button>
+<div class="cform"><textarea id="ctext" rows="1" inputmode="none" enterkeyhint="send" maxlength="500" placeholder="Message" autocomplete="off" aria-label="Message"></textarea><button id="gifBtn" type="button">GIF</button><button id="micBtn" type="button" aria-pressed="false" title="Dictate a message" aria-label="Dictate a message"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
 <button id="csend" type="button" class="main">Send</button></div>
 </div>
 </div>
@@ -183,7 +188,7 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 <button id="leave" type="button">Leave group</button>
 <button id="clear" type="button">Clear list</button>
 </div>
-<p class="small">Only links are saved, shared with everyone in your group. YouTube and Facebook move on by themselves. Long-press your own message to edit it; double-tap any message to react, reply or hear it read aloud; swipe a message sideways to reply. Long-press a letter key to type the small symbol on it. The speaker button reads new messages aloud. Everything starts by itself. Instagram can’t say when a reel ends, so tap Next when it finishes. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
+<p class="small">Only links are saved, shared with everyone in your group. YouTube and Facebook move on by themselves. Long-press your own message to edit it; double-tap anywhere on a message to react or reply; swipe a message sideways to reply. Long-press a letter key to type the small symbol on it. Tap the mic to dictate a message. Everything starts by itself. Instagram can’t say when a reel ends, so tap Next when it finishes. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -370,7 +375,7 @@ function react(key,emoji){
   buzz(12);
 }
 function bindBubble(d,m,mine){
-  let tm=null,moved=false,long=false,sx=0,sy=0,last=0,down=false,swiping=false,armed=false;
+  let tm=null,moved=false,long=false,sx=0,sy=0,last=0,down=false,swiping=false,armed=false,jt=null;
   d.addEventListener('contextmenu',e=>e.preventDefault());
   d.addEventListener('mousedown',e=>{if(editKey===m.key&&e.target!==editEl)e.preventDefault()});
   d.addEventListener('pointerdown',e=>{
@@ -401,9 +406,10 @@ function bindBubble(d,m,mine){
     }
     if(editKey===m.key){if(editEl&&document.activeElement!==editEl)editEl.focus({preventScroll:true});return}
     if(editKey||long||moved)return;
-    if(m.rp&&e.target.closest&&e.target.closest('.quote')){jumpTo(m.rp.k);return}
     const now=Date.now();
-    if(now-last<320){last=0;openReact(m.key)}else last=now;
+    if(now-last<320){last=0;clearTimeout(jt);openReact(m.key);return}
+    last=now;
+    if(m.rp&&e.target.closest&&e.target.closest('.quote')){clearTimeout(jt);jt=setTimeout(()=>jumpTo(m.rp.k),330)}
   });
 }
 function startEdit(m,d){
@@ -468,7 +474,7 @@ function renderChat(){
       rx.forEach(k=>{
         const ids=Object.keys(m.r[k]);const c=document.createElement('span');
         c.className='rxc'+(ids.indexOf(cid)>-1?' mine':'');
-        c.textContent=emojiOf(k)+(ids.length>1?' '+ids.length:'');
+        const ee=document.createElement('span');ee.className='em';ee.textContent=emojiOf(k);c.append(ee);if(ids.length>1)c.append(document.createTextNode(' '+ids.length));
         c.addEventListener('pointerdown',e=>e.stopPropagation());
         c.addEventListener('pointerup',e=>{e.stopPropagation();react(m.key,emojiOf(k))});
         w.append(c);
@@ -488,7 +494,7 @@ function startChat(id){
   cref=db.ref('groups/'+id+'/chat');
   cref.limitToLast(100).on('value',snap=>{
     const arr=[];snap.forEach(ch=>{arr.push(Object.assign({key:ch.key},ch.val()))});
-    cmsgs=arr;ttsNew(arr);renderChat();if(chatOpen())markSeen();else updateChatBtn();
+    cmsgs=arr;renderChat();if(chatOpen())markSeen();else updateChatBtn();
   });
 }
 let noteT=null;
@@ -502,6 +508,7 @@ function commitName(){
   updateNameRow();$('ctext').focus();
 }
 function sendChat(){
+  micCancel();
   if(editKey){commitEdit();return}
   let text=$('ctext').value.trim();
   if(!text||!cref)return;
@@ -713,52 +720,55 @@ function jumpTo(key){
 }
 $('rcancel').onclick=clearReply;
 
-/* read aloud */
-const ttsOK='speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined';
-let ttsOn=false,ttsInit=false,ttsLast='';
-try{ttsOn=ttsOK&&localStorage.getItem('tts')==='1'}catch(e){}
-function speak(t,queue){
-  if(!ttsOK){chatNote('Read aloud isn’t supported in this browser.');return}
-  try{
-    if(!queue)speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(t);u.lang=navigator.language||'en-US';
-    speechSynthesis.speak(u);
-  }catch(e){}
+/* dictation (speech to text) */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,micOn=false,micBase='';
+function micPaint(){const b=$('micBtn');b.classList.toggle('on',micOn);b.setAttribute('aria-pressed',micOn?'true':'false')}
+function micStop(){if(rec){try{rec.stop()}catch(e){}}}
+function micCancel(){if(rec){rec.onresult=null;try{rec.abort()}catch(e){}}}
+function micStart(){
+  const tgt=editEl||$('ctext');
+  micBase=tgt.value;
+  const r=new SR();rec=r;
+  r.lang=navigator.language||'en-US';
+  r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
+  r.onstart=()=>{micOn=true;micPaint()};
+  r.onresult=e=>{
+    const said=Array.from(e.results).map(x=>x[0].transcript).join(' ').trim();
+    const sep=micBase&&!/\s$/.test(micBase)?' ':'';
+    tgt.value=(micBase+sep+said).slice(0,tgt.maxLength>0?tgt.maxLength:500);
+    if(tgt.tagName==='TEXTAREA')fitBox(tgt);
+    kbAuto();
+  };
+  r.onerror=e=>{
+    const er=e.error;
+    chatNote(er==='not-allowed'||er==='service-not-allowed'?'Microphone access is blocked. Allow it in the browser’s site settings.':er==='no-speech'?'Didn’t hear anything. Tap the mic and try again.':er==='network'?'Dictation needs an internet connection.':er==='aborted'?'':'Dictation stopped ('+er+').');
+  };
+  r.onend=()=>{if(rec===r){rec=null;micOn=false;micPaint()}};
+  try{r.start()}catch(e){rec=null;micOn=false;micPaint()}
 }
-function ttsPaint(){const b=$('ttsBtn');b.textContent=ttsOn?'🔊':'🔇';b.classList.toggle('on',ttsOn);b.setAttribute('aria-pressed',ttsOn?'true':'false')}
-function ttsNew(arr){
-  const last=arr.length?arr[arr.length-1].key:'';
-  if(!ttsInit){ttsInit=true;ttsLast=last;return}
-  const fresh=arr.filter(m=>m.key>ttsLast);
-  if(!fresh.length)return;
-  ttsLast=fresh[fresh.length-1].key;
-  if(!ttsOn)return;
-  fresh.forEach(m=>{if(m.c!==cid&&m.t&&!parse(m.t))speak((m.n||'Someone')+' says: '+m.t,true)});
-}
-if(!ttsOK)$('ttsBtn').hidden=true;
-ttsPaint();
-$('ttsBtn').onclick=()=>{
-  ttsOn=!ttsOn;try{localStorage.setItem('tts',ttsOn?'1':'0')}catch(e){}
-  ttsPaint();
-  if(ttsOn)speak('Read aloud on');else{try{speechSynthesis.cancel()}catch(e){}}
-  chatNote(ttsOn?'New messages will be read aloud.':'Read aloud off.');
+$('micBtn').onclick=()=>{
+  if(!SR){chatNote('Dictation isn’t supported in this browser.');return}
+  if(rec){micStop();return}
+  micStart();
 };
+if(!SR)$('micBtn').hidden=true;
+micPaint();
 
 /* reactions */
 const EMOJIS=['👍','❤️','😂','😮','😢','🔥','👏','🎉','💯','🤯','😍','🤔','👀','🙌','💀','😎','👎','🤣','😭','✅','🚀','🤝','😡','🥳'];
 let rpKey=null,rpAt=0;
 function openReact(key){if(editKey)return;rpKey=key;rpAt=Date.now();buzz(15);$('rp').hidden=false}
 function closeReact(){$('rp').hidden=true;rpKey=null}
-EMOJIS.forEach(e=>{const b=document.createElement('button');b.type='button';b.textContent=e;b.setAttribute('aria-label','React '+e);b.onclick=()=>{const k=rpKey;closeReact();if(k)react(k,e)};$('rpbox').append(b)});
+EMOJIS.forEach(e=>{const b=document.createElement('button');b.type='button';const sp=document.createElement('span');sp.className='em';sp.textContent=e;b.append(sp);b.setAttribute('aria-label','React '+e);b.onclick=()=>{if(Date.now()-rpAt<400)return;const k=rpKey;closeReact();if(k)react(k,e)};$('rpbox').append(b)});
 $('rp').addEventListener('click',e=>{if(e.target===$('rp')&&Date.now()-rpAt>300)closeReact()});
 (()=>{
   const ra=document.createElement('div');ra.className='rpact';
-  const acts=[['↩ Reply',()=>{const m=cmsgs.find(x=>x.key===rpKey);closeReact();if(m)startReply(m)}]];
-  if(ttsOK)acts.push(['🔊 Read aloud',()=>{const m=cmsgs.find(x=>x.key===rpKey);closeReact();if(!m)return;if(m.t)speak(m.t);else chatNote('GIFs can’t be read aloud.')}]);
-  acts.forEach(a=>{const b=document.createElement('button');b.type='button';b.className='rpa';b.textContent=a[0];b.onclick=a[1];ra.append(b)});
-  $('rpbox').append(ra);
+  const b=document.createElement('button');b.type='button';b.className='rpa';b.textContent='↩ Reply';
+  b.onclick=()=>{if(Date.now()-rpAt<400)return;const m=cmsgs.find(x=>x.key===rpKey);closeReact();if(m)startReply(m)};
+  ra.append(b);$('rpbox').append(ra);
 })();
-['csend','gifBtn','cok','ttsBtn','rcancel'].forEach(id=>$(id).addEventListener('mousedown',e=>e.preventDefault()));
+['csend','gifBtn','cok','micBtn','rcancel'].forEach(id=>$(id).addEventListener('mousedown',e=>e.preventDefault()));
 $('csend').onclick=sendChat;
 $('cok').onclick=commitName;
 $('ctext').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendChat()}});
@@ -771,7 +781,7 @@ $('chatBtn').onclick=()=>{
     renderChat();$('cmsgs').scrollTop=$('cmsgs').scrollHeight;markSeen();updateNameRow();
     if(myName)$('ctext').focus();else $('cname').focus();
   }else{
-    $('kb').hidden=true;closeReact();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    $('kb').hidden=true;closeReact();micCancel();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     updateNameRow();updateChatBtn();
   }
 };
