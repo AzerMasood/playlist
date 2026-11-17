@@ -29,14 +29,14 @@ h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-s
 
 .pane iframe,.pane>div,.pane .fb-video,.pane span{width:100%!important;height:100%!important}
 .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;color:var(--muted);font-size:1rem}
-#bar{display:flex;flex:none;gap:6px;width:100%;margin:8px 0 0}
-#nameRow{display:flex;flex:none;gap:6px;margin:8px 0 0}
+#bar{display:flex;flex:none;gap:6px;width:100%;margin:6px 0 0}
+#nameRow{display:flex;flex:none;gap:6px;margin:6px 0 0}
 #nameRow[hidden]{display:none}
 #nameRow input{flex:1;min-width:0;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
-#nameRow button{padding:10px 18px}
-#bar button{flex:1;padding:11px 2px;font-size:.85rem;min-width:0}
+#nameRow button{padding:8px 18px}
+#bar button{flex:1;padding:7px 2px;font-size:.8rem;min-width:0;white-space:nowrap;line-height:1.2;border-radius:10px}
 #bar button.main{font-weight:700}
-.now{flex:none;text-align:center;margin:8px 0 0;min-height:1.4em;color:var(--muted);font-size:.9rem}
+.now{flex:none;text-align:center;margin:6px 0 0;min-height:1.4em;color:var(--muted);font-size:.9rem}
 .ctl{display:flex;gap:8px;justify-content:center;margin:10px 0}
 button{font:inherit;border:0;border-radius:12px;padding:12px 16px;cursor:pointer;background:var(--card);color:var(--muted);border:1px solid var(--line)}
 button:hover{color:var(--ink);border-color:var(--muted)}
@@ -61,7 +61,7 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 #grp{margin:0 0 8px}
 #chat{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;pointer-events:none}
 #chat[hidden]{display:none}
-.cform{display:flex;flex:none;gap:8px;padding:8px;pointer-events:auto;background:rgba(0,0,0,.4)}
+.cform{display:flex;flex:none;gap:8px;padding:6px 8px 8px;pointer-events:auto}
 .cform input{flex:1;min-width:0;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.6);color:var(--ink)}
 .cform button{background:rgba(0,0,0,.6);padding:10px 14px}
 #cmsgs{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none;pointer-events:none;padding:8px 10px 4px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
@@ -69,10 +69,10 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 #cmsgs>:first-child{margin-top:auto}
 #cmsgs .m{pointer-events:auto;flex:none}
 #chat.gifopen #cmsgs{display:none}
-#kb{flex:none;pointer-events:auto;padding:8px 6px 6px;background:rgba(0,10,3,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid rgba(25,255,60,.2);display:flex;flex-direction:column;gap:6px;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+#kb{flex:none;pointer-events:auto;padding:2px 4px 2px;display:flex;flex-direction:column;gap:4px;-webkit-user-select:none;user-select:none;touch-action:none}
 #kb[hidden]{display:none}
-.kr{display:flex;gap:5px}
-.kk{flex:1 1 0;min-width:0;height:42px;padding:0;border-radius:9px;border:1px solid rgba(25,255,60,.28);background:rgba(3,26,6,.55);color:var(--ink);font-size:1.05rem;display:flex;align-items:center;justify-content:center}
+.kr{display:flex;gap:4px}
+.kk{flex:1 1 0;min-width:0;height:36px;padding:0;border-radius:8px;border:1px solid rgba(25,255,60,.2);background:rgba(0,0,0,.22);color:var(--ink);font-size:1rem;text-shadow:0 0 3px #000,0 0 6px #000;display:flex;align-items:center;justify-content:center}
 .kk:active,.kk.on{background:rgba(25,255,60,.3);color:var(--ink)}
 .kk.w12{flex:1.2 1 0}.kk.w15{flex:1.5 1 0}.kk.w2{flex:2 1 0}.kk.sp{flex:4 1 0;font-size:.85rem;color:var(--muted)}
 .kk.go{border-color:var(--ink);font-weight:800}
@@ -91,6 +91,17 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 .gpow{padding:2px 10px 8px;font-size:.7rem;color:var(--muted)}
 .gifmsg{display:block;width:170px;max-width:100%;border-radius:10px;margin-top:2px}
 .m b{display:block;font-size:.72rem;color:var(--muted);font-weight:600}
+.m{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.medit{font:inherit;color:var(--ink);background:transparent;border:0;border-bottom:1px solid var(--ink);border-radius:0;padding:0;margin:0;min-width:4ch;max-width:100%;outline:none;-webkit-user-select:text;user-select:text}
+.m.editing{border-color:var(--ink)}
+.rx{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.rxc{font-size:.8rem;padding:1px 7px;border-radius:10px;border:1px solid rgba(25,255,60,.3);background:rgba(0,0,0,.4)}
+.rxc.mine{border-color:var(--ink)}
+#rp{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45)}
+#rp[hidden]{display:none}
+.rpbox{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:10px;background:rgba(0,10,3,.92);border:1px solid var(--ink);border-radius:16px;box-shadow:0 0 18px rgba(25,255,60,.25);max-width:94%}
+.rpbox button{padding:0;width:44px;height:44px;font-size:1.45rem;border:0;background:transparent;border-radius:12px;line-height:1}
+.rpbox button:active{background:rgba(25,255,60,.28)}
 </style>
 </head>
 <body>
@@ -103,6 +114,7 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 <div class="pane" id="igPane"></div>
 <div class="pane" id="fbPane"></div>
 <div class="pane" id="gifPane"></div>
+<div id="rp" hidden><div class="rpbox" id="rpbox" role="dialog" aria-label="React to message"></div></div>
 <div id="chat" hidden>
 <div id="cmsgs" aria-live="polite"></div>
 <div id="gp" hidden>
@@ -148,7 +160,7 @@ body.nogroup main>*:not(#join):not(h1){display:none}
 <button id="leave" type="button">Leave group</button>
 <button id="clear" type="button">Clear list</button>
 </div>
-<p class="small">Only links are saved, shared with everyone in your group. YouTube and Facebook move on by themselves. Everything starts by itself. Instagram can’t say when a reel ends, so tap Next when it finishes. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
+<p class="small">Only links are saved, shared with everyone in your group. YouTube and Facebook move on by themselves. Long-press your own message to edit it; double-tap any message to react. Everything starts by itself. Instagram can’t say when a reel ends, so tap Next when it finishes. Private or friends-only posts won’t play. Your phone may ask for one tap to start the first video.</p>
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -307,27 +319,96 @@ const chatOpen=()=>!$('chat').hidden;
 function seenKey(){try{return localStorage.getItem('chatSeen:'+gid)||''}catch(e){return ''}}
 function updateChatBtn(){const s=seenKey();const n=chatOpen()?0:cmsgs.filter(m=>m.key>s&&m.c!==cid&&!parse(m.t||'')).length;$('chatBtn').textContent=n?'Chat ('+n+')':'Chat'}
 function markSeen(){const last=cmsgs.length?cmsgs[cmsgs.length-1].key:'';if(last){try{localStorage.setItem('chatSeen:'+gid,last)}catch(e){}}updateChatBtn()}
-const GIF_LIFE=5000;let srvOff=0,gifT=null,stickBottom=false;
+const GIF_LIFE=5000;let srvOff=0,gifT=null,stickBottom=false,editKey=null,editEl=null,editOrig="",chatDirty=false;
 function srvNow(){return Date.now()+srvOff}
+const ekey=e=>Array.from(e).map(c=>c.codePointAt(0).toString(16)).join('_');
+const emojiOf=k=>String.fromCodePoint.apply(null,k.split('_').map(h=>parseInt(h,16)));
+function react(key,emoji){
+  if(!cref)return;
+  const ek=ekey(emoji),m=cmsgs.find(x=>x.key===key);
+  const has=!!(m&&m.r&&m.r[ek]&&m.r[ek][cid]);
+  const r=cref.child(key).child('r').child(ek).child(cid);
+  (has?r.remove():r.set(true)).catch(()=>chatNote('Could not react.'));
+  buzz(12);
+}
+function bindBubble(d,m,mine){
+  let tm=null,moved=false,long=false,sx=0,sy=0,last=0;
+  d.addEventListener('contextmenu',e=>e.preventDefault());
+  d.addEventListener('pointerdown',e=>{
+    if(editKey)return;
+    moved=false;long=false;sx=e.clientX;sy=e.clientY;
+    if(mine&&m.t)tm=setTimeout(()=>{long=true;startEdit(m,d)},500);
+  });
+  d.addEventListener('pointermove',e=>{if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>10){moved=true;clearTimeout(tm)}});
+  ['pointercancel','pointerleave'].forEach(t=>d.addEventListener(t,()=>clearTimeout(tm)));
+  d.addEventListener('pointerup',()=>{
+    clearTimeout(tm);
+    if(editKey||long||moved)return;
+    const now=Date.now();
+    if(now-last<320){last=0;openReact(m.key)}else last=now;
+  });
+}
+function startEdit(m,d){
+  if(editKey)return;
+  const span=d.querySelector('span');if(!span)return;
+  buzz(22);
+  const el=document.createElement('input');
+  el.type='text';el.className='medit';el.value=m.t;el.maxLength=500;
+  el.setAttribute('inputmode','none');el.setAttribute('enterkeyhint','done');el.setAttribute('aria-label','Edit message');
+  const fit=()=>{el.style.width=Math.min(Math.max(el.value.length+1,4),40)+'ch'};
+  fit();
+  editKey=m.key;editEl=el;editOrig=m.t;
+  span.replaceWith(el);d.classList.add('editing');
+  kbBind(el);
+  el.addEventListener('input',fit);
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commitEdit()}});
+  el.addEventListener('blur',()=>setTimeout(()=>{if(editEl===el)commitEdit()},0));
+  el.focus({preventScroll:true});
+  const n=el.value.length;try{el.setSelectionRange(n,n)}catch(x){}
+}
+function commitEdit(){
+  if(!editKey)return;
+  const key=editKey,el=editEl,orig=editOrig,v=el.value.trim();
+  editKey=null;editEl=null;
+  if(kbTarget===el)kbTarget=$('ctext');
+  if(!$('kb').hidden&&chatOpen())$('ctext').focus({preventScroll:true});
+  if(v&&v!==orig&&cref)cref.child(key).update({t:v,ed:1}).catch(()=>chatNote('Could not save the edit.'));
+  chatDirty=false;renderChat();
+}
 function renderChat(){
+  if(editKey){chatDirty=true;return}
   const box=$('cmsgs');const prev=box.scrollTop;const atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<60;
   box.textContent='';
   let nextExpiry=Infinity;
-  cmsgs.filter(m=>!parse(m.t||'')).forEach(m=>{
-    if(m.g){const exp=(m.ts||srvNow())+GIF_LIFE;if(exp<=srvNow())return;nextExpiry=Math.min(nextExpiry,exp)}
-    m._show=true;
-  });
-  cmsgs.filter(m=>m._show).slice(-100).forEach(m=>{
-    const d=document.createElement('div');d.className='m'+(m.c===cid?' me':'');
+  const vis=cmsgs.filter(m=>{
+    if(parse(m.t||''))return false;
+    if(m.g){const exp=(m.ts||srvNow())+GIF_LIFE;if(exp<=srvNow())return false;nextExpiry=Math.min(nextExpiry,exp)}
+    return true;
+  }).slice(-100);
+  vis.forEach(m=>{
+    const mine=m.c===cid;
+    const d=document.createElement('div');d.className='m'+(mine?' me':'');
     const b=document.createElement('b');const t=m.ts?new Date(m.ts):null;
-    b.textContent=(m.n||'Someone')+(t?' · '+t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'');
-    const x=document.createElement('span');x.textContent=m.t||'';
+    b.textContent=(m.n||'Someone')+(t?' · '+t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'')+(m.ed?' · edited':'');
     d.append(b);
-    if(m.t)d.append(x);
+    if(m.t){const x=document.createElement('span');x.textContent=m.t;d.append(x)}
     if(m.g&&okGif(m.g)){const im=document.createElement('img');im.src=m.g;im.alt='GIF';im.className='gifmsg';im.loading='lazy';d.append(im)}
+    const rx=m.r?Object.keys(m.r).filter(k=>m.r[k]&&Object.keys(m.r[k]).length).sort():[];
+    if(rx.length){
+      const w=document.createElement('div');w.className='rx';
+      rx.forEach(k=>{
+        const ids=Object.keys(m.r[k]);const c=document.createElement('span');
+        c.className='rxc'+(ids.indexOf(cid)>-1?' mine':'');
+        c.textContent=emojiOf(k)+(ids.length>1?' '+ids.length:'');
+        c.addEventListener('pointerdown',e=>e.stopPropagation());
+        c.addEventListener('pointerup',e=>{e.stopPropagation();react(m.key,emojiOf(k))});
+        w.append(c);
+      });
+      d.append(w);
+    }
+    bindBubble(d,m,mine);
     box.append(d);
   });
-  cmsgs.forEach(m=>{delete m._show});
   if(atEnd||stickBottom){box.scrollTop=box.scrollHeight;stickBottom=false}
   else box.scrollTop=prev;
   clearTimeout(gifT);
@@ -432,7 +513,7 @@ function kbRefresh(){
     if(k==='shift')b.classList.toggle('on',kbShift);
   });
 }
-function kbAuto(){const el=kbTarget;kbShift=!!el&&el!==$('gq')&&/(^|[.!?]\s+)$/.test(el.value);kbRefresh()}
+function kbAuto(){const el=kbTarget;if(!el){kbShift=false;kbRefresh();return}const p=el.selectionStart==null?el.value.length:el.selectionStart;kbShift=el!==$('gq')&&/(^|[.!?]\s+)$/.test(el.value.slice(0,p));kbRefresh()}
 function kbEdit(el,ch){
   const len=el.value.length;
   let s=el.selectionStart,e=el.selectionEnd;if(s==null){s=e=len}
@@ -450,7 +531,8 @@ function kbEdit(el,ch){
 }
 function kbEnter(){
   const el=kbTarget;
-  if(el===$('ctext'))sendChat();
+  if(editEl&&el===editEl)commitEdit();
+  else if(el===$('ctext'))sendChat();
   else if(el===$('cname'))commitName();
   else if(el===$('gq')){clearTimeout(gTimer);gLoad($('gq').value.trim())}
 }
@@ -466,20 +548,47 @@ function kbPress(k){
   kbAuto();
 }
 const kbEl=$('kb');
+const buzz=ms=>{try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}};
+let spX=null,spDrag=false,spAcc=0;
+function kbMoveCaret(n){
+  const el=kbTarget;if(!el)return;
+  if(document.activeElement!==el&&!el.closest('[hidden]'))el.focus({preventScroll:true});
+  const len=el.value.length,p=el.selectionStart==null?len:el.selectionStart;
+  const np=Math.max(0,Math.min(len,p+n));
+  try{el.setSelectionRange(np,np)}catch(x){}
+  kbAuto();
+}
 kbEl.addEventListener('pointerdown',e=>{
   const b=e.target.closest('.kk');if(!b)return;
   e.preventDefault();
-  const k=b.dataset.k;kbPress(k);
-  if(k==='back'){clearTimeout(kbRep);kbRep=setTimeout(function r(){kbPress('back');kbRep=setTimeout(r,70)},400)}
+  const k=b.dataset.k;
+  buzz(k==='enter'?18:8);
+  if(k==='space'){spX=e.clientX;spDrag=false;spAcc=0;return}
+  kbPress(k);
+  if(k==='back'){clearTimeout(kbRep);kbRep=setTimeout(function r(){kbPress('back');buzz(6);kbRep=setTimeout(r,70)},400)}
 });
-['pointerup','pointercancel','pointerleave'].forEach(t=>kbEl.addEventListener(t,()=>clearTimeout(kbRep)));
+kbEl.addEventListener('pointermove',e=>{
+  if(spX===null)return;
+  spAcc+=e.clientX-spX;spX=e.clientX;
+  if(Math.abs(spAcc)>=12){const n=Math.trunc(spAcc/12);spAcc-=n*12;spDrag=true;kbMoveCaret(n);buzz(3)}
+});
+function endSpace(typeIt){if(spX===null)return;const dragged=spDrag;spX=null;spDrag=false;spAcc=0;if(typeIt&&!dragged)kbPress('space')}
+kbEl.addEventListener('pointerup',()=>{clearTimeout(kbRep);endSpace(true)});
+['pointercancel','pointerleave'].forEach(t=>kbEl.addEventListener(t,()=>{clearTimeout(kbRep);endSpace(false)}));
 window.addEventListener('pointerup',()=>clearTimeout(kbRep));
 kbEl.addEventListener('mousedown',e=>e.preventDefault());
 kbEl.addEventListener('contextmenu',e=>e.preventDefault());
 buildKb();
-['ctext','gq','cname'].forEach(id=>{
-  $(id).addEventListener('focus',()=>{kbTarget=$(id);$('kb').hidden=false;kbAuto();window.scrollTo(0,0)});
-});
+function kbBind(el){el.addEventListener('focus',()=>{kbTarget=el;$('kb').hidden=false;kbAuto();window.scrollTo(0,0)})}
+['ctext','gq','cname'].forEach(id=>kbBind($(id)));
+
+/* reactions */
+const EMOJIS=['👍','❤️','😂','😮','😢','🔥','👏','🎉','💯','🤯','😍','🤔','👀','🙌','💀','😎','👎','🤣','😭','✅','🚀','🤝','😡','🥳'];
+let rpKey=null,rpAt=0;
+function openReact(key){if(editKey)return;rpKey=key;rpAt=Date.now();buzz(15);$('rp').hidden=false}
+function closeReact(){$('rp').hidden=true;rpKey=null}
+EMOJIS.forEach(e=>{const b=document.createElement('button');b.type='button';b.textContent=e;b.setAttribute('aria-label','React '+e);b.onclick=()=>{const k=rpKey;closeReact();if(k)react(k,e)};$('rpbox').append(b)});
+$('rp').addEventListener('click',e=>{if(e.target===$('rp')&&Date.now()-rpAt>300)closeReact()});
 ['csend','gifBtn','cok'].forEach(id=>$(id).addEventListener('mousedown',e=>e.preventDefault()));
 $('csend').onclick=sendChat;
 $('cok').onclick=commitName;
@@ -492,7 +601,7 @@ $('chatBtn').onclick=()=>{
     renderChat();$('cmsgs').scrollTop=$('cmsgs').scrollHeight;markSeen();updateNameRow();
     if(myName)$('ctext').focus();else $('cname').focus();
   }else{
-    $('kb').hidden=true;if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    $('kb').hidden=true;closeReact();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     updateNameRow();updateChatBtn();
   }
 };
